@@ -33,11 +33,21 @@ print(f"El usuario 2 es {usuario2.rol}")
 print("Cambio de atributo en usuario 2")
 usuario2.rol = "administrador"
 print(f"El usuario 2 ahora es {usuario2.rol}")
-        
-class Administrador:
-    pass
-class Aspirante:
-    pass
+
+#Implementacion de herencia        
+class Administrador(Usuario): #<--- Hereda de la clase Usuario
+    def __init__(self, nombre, correo, puesto): #<-- Sin super
+        self.nombre = nombre
+        self.correo = correo
+        self.puesto = puesto
+class Aspirante(Usuario):
+    def __init__(self,nombre, correo, status):
+        super().__init__(nombre, correo)#<-- Usando super ya no se apunta a todos los atributos
+        self.status = status
+
+print(Aspirante.__bases__) #De que clase se hereda
+print(Usuario.__subclasses__) #Que herencias tiene esa clase
+
 class Evaluacion:
     def __init__(self,nota, tiempoEvaluacion):
         self.__nota=nota
