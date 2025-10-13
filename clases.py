@@ -30,7 +30,8 @@ class Evaluacion:
         print("Evaluacion cancelada")
 
 class Universidad:
-    pass
+    def __init__(self, nombreUniversidad):
+        self.nombreUniversidad=nombreUniversidad
 
 class Carrera:
     pass    
