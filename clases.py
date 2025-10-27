@@ -37,33 +37,32 @@ Inscripccion --> Postulacion --> Evaluacion --> Notas --> Sistema Sac
 
 class Usuario:
     #atributo de clase
-    rol = "aspirante"
-
     #deifiniendo atributos de instancia
-    def __init__(self, nombre, correo):
+    def __init__(self, nombre, correo): #Constructor de usuarios
         self.nombre = nombre
         self.correo = correo
     
-    #Metodo de instancia 
-    def iniciarSesion(self, correo, contraseña):
-        correoValido = "ejemplo@mail.com"
-        contraseñaValida = "contraseñasegura"
-        print("Iniciando sesion")
-        if correo==correoValido and contraseña==contraseñaValida:
-            print("Credenciales correctas")
-        else:
-            print("Credenciales incorrectas")
-
 #Implementacion de herencia        
 class Administrador(Usuario): #<--- Hereda de la clase Usuario
-    def __init__(self, nombre, correo, puesto): #<-- Sin super
+    def __init__(self, nombre, correo): #<-- Sin super
         self.nombre = nombre
         self.correo = correo
-        self.puesto = puesto
+    def crearUniversidad(nombre, sedes):
+        return Universidad(nombre, sedes)
+
+    def crearPerido():
+        pass
+    def crearCarrera():
+        pass
+    def crearSedes():
+        pass
 class Aspirante(Usuario):
-    def __init__(self,nombre, correo, status):
+    def __init__(self,nombre, correo):
         super().__init__(nombre, correo)#<-- Usando super ya no se apunta a todos los atributos
-        self.status = status
+        self.status = None
+    
+    def definirEstado(self,estado):
+        self.estatus=estado
 
 """
 print(Aspirante.__bases__) #De que clase se hereda
@@ -90,8 +89,9 @@ class Evaluacion:
     def ejecutarEvaluacion(self):
         print("Ejecutando evaluacion")
 class Universidad:
-    def __init__(self, nombreUniversidad):
+    def __init__(self, nombreUniversidad, sedes):
         self.nombreUniversidad=nombreUniversidad
+        self.sedes=sedes
 class Documento:
     pass
 class Notificacion:
@@ -101,16 +101,17 @@ class Reporte:
 class Postulacion:
     pass
 class OfertaAcademica:
+    #1 Universidad
+    #1 Periodo
+    #Muchas carreras
+    #1 Sede
     pass
 class Periodo:
     pass
 class Laboratorio:
     pass
 class Sede:
-    pass
-class Matriz:
-    pass
-class Extension:
+    #Laboratorios
     pass
 class Carrera:
     pass    
@@ -120,41 +121,47 @@ class Nota:
 
 
 #Modulo de login
-administradores=[["admin1","123"],["admin3","456"]]
-aspirantes=[["daniel","software1"],["luis","software2"]] #Estas serian conexiones con la base de datos
+db_usuarios = [
+    {"correo": "admin1", "contrasena": "123", "rol": "admin"},
+    {"correo": "daniel", "contrasena": "software1", "rol": "postulante"},
+    {"correo": "admin3", "contrasena": "456", "rol": "admin"},
+    {"correo": "luis", "contrasena": "software2", "rol": "postulante"}
+]
+#Estas serian conexiones con la base de datos]
 
 def login(bd):#Base de datos de las credenciales
-    correo=""
-    contraseña=""
-
-    print("Ingrese sus credenciales: ")
+    print("===Inicio de sesion===\nIngrese sus credenciales: \n")
 
     correo=input("correo: ")
     contraseña=input("contraseña: ")
     
-    for i in range(len(bd)):
-        if bd[i][0] == correo and bd[i][1] == contraseña:
-            print("Logueado")
+    for usuario in bd:
+        if usuario["correo"] == correo and usuario["contrasena"] == contraseña:
+            if usuario["rol"] == "admin":
+                print("Login exitoso. ¡Bienvenido Administrador!")
+                return Administrador(correo) # Retorna un objeto Admin
+            elif usuario["rol"] == "postulante":
+                print("Login exitoso. ¡Bienvenido Postulante!")
+                return Aspirante(correo) # Retorna un objeto Aspirante
+    print("Error: Credenciales incorrectas.")
+    return None
+    
 """
 Ejecucion del sistema
 """
 if __name__ == "__main__":
     opcion=0
     while True:
-        print("====Menu===\n1 : Administrador\n2 : Aspirante\n3 : Salir\n")
-
+        print("====Menu===\n1 : Ingresar a sistema \n2 : Salir\n")
         opcion = int(input("Ingrese su opcion: "))
-
         if opcion == 1 :
-            print("Ingresando como Administrador\n")
-            login(administradores)
-
-            
-        elif opcion == 2 :
-            print("Ingresando como aspirante\n")
-            login(aspirantes)
-
-        else:
+            print("Ingresando al sistema\n")
+            usuarioActual=login(db_usuarios)
+            if isinstance (usuarioActual, Administrador):
+                pass
+        else: 
             print("Saliendo del sistema\n")
             break
+            pass
+            
 
