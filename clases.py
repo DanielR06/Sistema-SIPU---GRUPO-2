@@ -1,3 +1,40 @@
+""" SISTEMA SIPU (Sistema Incricripcion Postulacuion Universitario)
+
+CLASES PRINCIPALES:
+Usuario
+Administrador
+Aspirante
+Evaluacion
+Universidad
+Documento
+Notificacion
+Reporte
+Postulacion
+OfertaAcademica
+Periodo 
+Laboratorio 
+Sede 
+Matriz
+Extension
+Carrera
+Nota
+
+Herencias:
+
+Flujo del sistema:
+La universidad dispone la OfertaAcademica (Carrera disponibles en cada sede en ese periodo)
+El aspirante postula en la universidad (en el periodo actual)
+El Sistema consume la api de del registro nacional
+Si no tiene registro nacional no es valido
+Se selecciona una o mas carreras
+Organizacion de Evaluaciones (General o por area) en linea o virtual
+Organacion de jornadas 
+Incidencias en examenes(examenes canceladas)
+Los estudiantes obtienen sus notas
+
+Inscripccion --> Postulacion --> Evaluacion --> Notas --> Sistema Sac 
+"""
+
 class Usuario:
     #atributo de clase
     rol = "aspirante"
