@@ -99,6 +99,24 @@ class Universidad:
 
 
 class Documento:
+     def __init__(self, tipodeDocumento, NombreArchivo, FechaSubida, Propietario):
+        self.tipodeDocumento=tipodeDocumento
+        self.NombreArchivo=NombreArchivo
+        self.FechaSubida=FechaSubida
+        self.Propietario=Propietario
+        self.EstadoAprobacion="Pendiente"
+        self.observaciones=""
+    def RevisiondeDocumento(self, estado, observaciones):
+        self.EstadoAprobacion=estado
+        self.observaciones=observaciones
+        print(f"El documento ha sido '{self.NombreArchivo} con las siguientes observaciones: {estado} - {observaciones}'")
+    def MostrarResumen(self):
+        print(f"Documento: {self.NombreArchivo}")
+        print(f"Tipo: {self.tipodeDocumento}")
+        print(f"Fecha subida: {self.FechaSubida}")
+        print(f"Estado: {self.EstadoAprobacion}")
+        if self.observaciones:
+            print(f"Observaciones: {self.observaciones}")
     pass
 
 
