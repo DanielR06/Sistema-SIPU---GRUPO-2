@@ -4,18 +4,18 @@ from db import SQLiteRepository
 import os
 
 # Intentamos importar Pillow para manejar imágenes (logo). Si no está,
-# la app seguirá funcionando y mostrará el texto del logo.
+# la app seguirá funcionando.
 try:
     from PIL import Image, ImageTk
     PIL_AVAILABLE = True
 except Exception:
     PIL_AVAILABLE = False
 
-# Tamaño máximo del logo en la cabecera (ajústalo aquí)
+# Tamaño máximo del logo en la cabecera (ajústable aquí)
 LOGO_MAX_WIDTH = 160
 LOGO_MAX_HEIGHT = 48
 
-# Interfaz gráfica usando CustomTkinter
+# Interfaz gráfica
 # Demuestra inyección de dependencias: la App recibe un AuthService
 
 class App(ctk.CTk):
@@ -138,7 +138,7 @@ class App(ctk.CTk):
             self._open_main_panel(usuario)
 
     def _on_register(self):
-        # Abrir el formulario real de inscripción (no simulado)
+        # Abrir el formulario real de inscripción
         # Reutilizamos _open_inscripcion que abre un modal completo
         self._open_inscripcion(self)
 
@@ -645,7 +645,6 @@ class App(ctk.CTk):
 
         # Mover la nota de campos obligatorios hacia abajo para evitar solapamiento
         note_lbl = ctk.CTkLabel(modal, text="* Campos obligatorios", text_color="#b22222")
-        # colocamos la nota debajo de los campos (evita cubrir el input DNI)
         note_lbl.place(x=12, y=base_y+240)
 
         msg = ctk.CTkLabel(modal, text="")
@@ -670,7 +669,7 @@ class App(ctk.CTk):
                 msg.configure(text="Apellidos/Nombres y correo son obligatorios", text_color="#d9534f")
                 return
             try:
-                # Guardamos separando apellidos y nombres y referenciando el periodo
+                # Guardado separado apellidos y nombres y referenciando el periodo
                 self.repository.add_student(nombre=f"{apellidos} {nombres}".strip(), correo=correo, dni=dni, period_id=p['id'], inscripcion_finalizada=0, apellidos=apellidos, nombres=nombres)
                 msg.configure(text="Aspirante registrado", text_color="#28a745")
                 self._refresh_students()
@@ -682,7 +681,7 @@ class App(ctk.CTk):
         # Usamos relx para evitar solapamiento y que sea estable si cambia el tamaño del modal
         btn_save.place(relx=0.98, y=base_y+252, anchor="e")
 
-        # Volver / cancelar alineado a la izquierda usando relx
+        # botón de volver del lado izquierdo
         btn_back = ctk.CTkButton(modal, text="← Volver", command=modal.destroy, width=120, fg_color="#e9eef2", text_color="#333")
         btn_back.place(relx=0.02, y=base_y+252, anchor="w")
 

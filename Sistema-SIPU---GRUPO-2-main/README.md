@@ -1,6 +1,6 @@
 # Sistema-SIPU (Grupo 2)
 
-Proyecto demo que implementa un prototipo de sistema de inscripción y postulación
+Proyecto que implementa un prototipo de sistema de inscripción y postulación
 universitaria (SIPU) con enfoque en Programación Orientada a Objetos (POO) y
 patrones básicos (abstracción, herencia, polimorfismo, interfaces, inyección de
 dependencias). Incluye una interfaz gráfica de ejemplo con CustomTkinter y

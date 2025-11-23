@@ -1,13 +1,5 @@
 """Refactor de clases para demostrar POO avanzada:
 
-Incluye:
-- Clases abstractas (ABC)
-- Interfaces (AuthService)
-- Herencia y polimorfismo (Usuario -> Administrador/Aspirante)
-- Inyección de dependencias (AuthService inyectado)
-- Decoradores @property
-- Diseño acoplado de forma débil (GUI o servicios usan interfaces)
-
 Este archivo contiene las definiciones de dominio y un servicio de
 autenticación en memoria que puede inyectarse en una GUI.
 """
@@ -138,9 +130,7 @@ class Nota:
     pass
 
 
-# -------------------------------
 # Interfaces / Inyección de dependencias
-# -------------------------------
 
 
 class AuthService(ABC):
@@ -166,7 +156,7 @@ class AuthService(ABC):
 class InMemoryAuthService(AuthService):
     """Implementación simple en memoria del AuthService.
 
-    Demonstrates dependency injection: la base de datos (lista) se
+    Demuestra inyección de dependencias: la base de datos (lista) se
     pasa al constructor en lugar de ser referenciada globalmente.
     """
 
