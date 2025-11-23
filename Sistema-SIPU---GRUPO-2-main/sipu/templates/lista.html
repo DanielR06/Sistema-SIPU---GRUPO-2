@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lista de Aspirantes - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="container">
+      <h1>Aspirantes registrados</h1>
+      <a href="{{ url_for('main.inscripcion') }}" class="button">Nuevo Aspirante</a>
+      <table class="table">
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>DNI</th><th>Periodo</th></tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+            <tr>
+              <td>{{ s.id }}</td>
+              <td>{{ s.nombre }}</td>
+              <td>{{ s.correo }}</td>
+              <td>{{ s.dni }}</td>
+              <td>{{ s.period_name or '-' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">No hay aspirantes registrados.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <a href="{{ url_for('main.dashboard') }}" class="button secondary">Volver al dashboard</a>
+    </main>
+  </body>
+</html>

@@ -43,8 +43,40 @@ Desde PowerShell, en la carpeta del proyecto:
 
 ```powershell
 # ejecutar la interfaz
-python "c:\\Users\\ASUS\\Downloads\\Sistema-SIPU---GRUPO-2-main\\Sistema-SIPU---GRUPO-2-main\\main.py"
 ```
+## Ejecución (Web)
+
+Hemos reestructurado la app para ser una aplicación web ligera con Flask.
+
+1. Crear y activar un entorno virtual (recomendado):
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+2. Instalar dependencias:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+3. Ejecutar la aplicación web (escucha en 0.0.0.0:5000 por defecto):
+
+```powershell
+# desde la carpeta "Sistema-SIPU---GRUPO-2-main"
+python app.py
+```
+
+4. Abrir el navegador desde otra máquina en la misma red (o la local):
+
+http://<IP_DEL_EQUIPO>:5000/
+
+La interfaz incluye:
+- Login (usar las credenciales de `clases.py`, p. ej. `admin1` / `123`).
+- Dashboard con enlaces a la lista de aspirantes y al formulario de inscripción.
+
+Nota: `main.py` (interfaz con CustomTkinter) sigue en el repositorio para referencia, pero la experiencia principal ahora es web.
 
 ## Credenciales de prueba
 
