@@ -10,7 +10,7 @@ import os
 # Agregar el directorio padre al path para imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from sipu.mongo_repository import MongoDBRepository
+from patron_brige import create_repository
 from sipu.models import InMemoryAuthService, DEFAULT_DB
 
 # Importar el patrón Observer
@@ -64,10 +64,10 @@ def simulate_student_registration():
     
     # 1. Configurar sistema con observadores
     try:
-        repo = MongoDBRepository()
-        print("✅ Conexión a MongoDB exitosa")
+        repo = create_repository(use_mongodb=True)
+        print("✅ Conexión a base de datos exitosa (usando patrón Bridge)")
     except Exception as e:
-        print(f"⚠️ MongoDB no disponible: {e}")
+        print(f"⚠️ Base de datos no disponible: {e}")
         print("   Continuando con simulación sin base de datos...\n")
         repo = None
     

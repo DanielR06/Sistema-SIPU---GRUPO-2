@@ -1,17 +1,18 @@
-"""Script para inicializar datos de ejemplo en MongoDB."""
+"""Script para inicializar datos de ejemplo en la base de datos."""
 import os
 from datetime import datetime, timedelta
 
 def initialize_sample_data():
     """Inserta datos de ejemplo en la base de datos."""
     try:
-        from sipu.mongo_repository import MongoDBRepository
+        from patrones_diseño.patron_brige import create_repository
         
         print("=" * 60)
-        print("   Inicializando datos de ejemplo en MongoDB")
+        print("   Inicializando datos de ejemplo en la base de datos")
         print("=" * 60)
         
-        repo = MongoDBRepository()
+        # Usar MongoDB por defecto para inicialización
+        repo = create_repository(use_mongodb=True)
         
         # Verificar si ya existen datos
         existing_periods = repo.list_periods()

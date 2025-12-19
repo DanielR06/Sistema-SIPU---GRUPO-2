@@ -3,15 +3,16 @@ import os
 from .models import InMemoryAuthService, DEFAULT_DB
 from .certificate import generate_certificate
 
-# Importar el repositorio según la configuración
-USE_MONGODB = os.environ.get('USE_MONGODB', 'true').lower() == 'true'
+# Importar el repositorio usando el patrón Bridge
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-if USE_MONGODB:
-    from .mongo_repository import MongoDBRepository
-    repo = MongoDBRepository()
-else:
-    from .repository import SQLiteRepository
-    repo = SQLiteRepository()
+from patrones_diseño.patron_brige import create_repository
+
+# Crear el repositorio según la configuración
+USE_MONGODB = os.environ.get('USE_MONGODB', 'true').lower() == 'true'
+repo = create_repository(use_mongodb=USE_MONGODB)
 
 bp = Blueprint('main', __name__, template_folder='templates', static_folder='static')
 

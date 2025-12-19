@@ -58,13 +58,13 @@ def test_mongodb_connection():
 
 
 def test_repository():
-    """Prueba el repositorio MongoDB."""
+    """Prueba el repositorio usando el patrón Bridge."""
     try:
-        from sipu.mongo_repository import MongoDBRepository
+        from patrones_diseño.patron_brige import create_repository
         
-        print("\n🔍 Probando MongoDBRepository...")
+        print("\n🔍 Probando repositorio con patrón Bridge...")
         
-        repo = MongoDBRepository()
+        repo = create_repository(use_mongodb=True)
         
         # Probar listado de carreras
         careers = repo.list_careers()
