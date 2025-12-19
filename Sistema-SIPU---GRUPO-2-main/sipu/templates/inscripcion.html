@@ -28,6 +28,14 @@
           {% endfor %}
         </select>
 
+        <label>Carrera *</label>
+        <select name="carrera" required>
+          <option value="">-- seleccione --</option>
+          {% for c in careers %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+
         <label>Apellidos</label>
         <input name="apellidos">
         <label>Nombres</label>
