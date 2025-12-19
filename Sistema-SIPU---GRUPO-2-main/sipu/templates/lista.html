@@ -10,9 +10,10 @@
     <main class="container">
       <h1>Aspirantes registrados</h1>
       <a href="{{ url_for('main.inscripcion') }}" class="button">Nuevo Aspirante</a>
-      <table class="table">
-        <thead>
-          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>DNI</th><th>Periodo</th></tr>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>DNI</th><th>Periodo</th><th>Carrera</th><th>Acciones</th></tr>
         </thead>
         <tbody>
           {% for s in students %}
@@ -22,12 +23,17 @@
               <td>{{ s.correo }}</td>
               <td>{{ s.dni }}</td>
               <td>{{ s.period_name or '-' }}</td>
+              <td>{{ s.career_name or '-' }}</td>
+              <td>
+                <a href="{{ url_for('main.descargar_certificado', student_id=s.id) }}" class="button small" title="Descargar certificado de inscripción">📄 Certificado</a>
+              </td>
             </tr>
           {% else %}
-            <tr><td colspan="5">No hay aspirantes registrados.</td></tr>
+            <tr><td colspan="7">No hay aspirantes registrados.</td></tr>
           {% endfor %}
         </tbody>
-      </table>
+        </table>
+      </div>
       <a href="{{ url_for('main.dashboard') }}" class="button secondary">Volver al dashboard</a>
     </main>
   </body>
