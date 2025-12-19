@@ -67,7 +67,7 @@ class Universidad:
 
 
 class Documento:
-     def __init__(self, tipodeDocumento, NombreArchivo, FechaSubida, Propietario):
+    def __init__(self, tipodeDocumento, NombreArchivo, FechaSubida, Propietario):
         self.tipodeDocumento=tipodeDocumento
         self.NombreArchivo=NombreArchivo
         self.FechaSubida=FechaSubida
