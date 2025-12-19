@@ -2,17 +2,24 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 import os
 from .models import InMemoryAuthService, DEFAULT_DB
 from .certificate import generate_certificate
+from .observer_integration import emit_student_registered, emit_certificate_generated
+from .singleton_integration import (
+    cache_periods, get_cached_periods,
+    cache_careers, get_cached_careers,
+    register_user_session, close_user_session
+)
+from .chain_integration import validate_student_data_for_routes, validate_login_credentials
+from .bridge_integration import notify_student_registration, notify_certificate_generated
 
-# Importar el repositorio usando el patrón Bridge
-import sys
-import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from patrones_diseño.patron_brige import create_repository
-
-# Crear el repositorio según la configuración
+# Importar el repositorio según la configuración
 USE_MONGODB = os.environ.get('USE_MONGODB', 'true').lower() == 'true'
-repo = create_repository(use_mongodb=USE_MONGODB)
+
+if USE_MONGODB:
+    from .mongo_repository import MongoDBRepository
+    repo = MongoDBRepository()
+else:
+    from .repository import SQLiteRepository
+    repo = SQLiteRepository()
 
 bp = Blueprint('main', __name__, template_folder='templates', static_folder='static')
 
@@ -25,9 +32,17 @@ def login():
     if request.method == 'POST':
         correo = request.form.get('correo', '').strip()
         contrasena = request.form.get('contrasena', '').strip()
-        if not correo or not contrasena:
-            flash('Complete correo y contraseña', 'danger')
+        
+        # Validar con Chain of Responsibility
+        is_valid, errors = validate_login_credentials({
+            'username': correo,
+            'password': contrasena
+        })
+        
+        if not is_valid:
+            flash('. '.join(errors), 'danger')
             return redirect(url_for('main.login'))
+        
         usuario = auth_service.authenticate(correo, contrasena)
         if usuario is None:
             flash('Credenciales incorrectas', 'danger')
@@ -96,6 +111,19 @@ def descargar_certificado(student_id):
         pdf_buffer = generate_certificate(student_data)
         nombre_archivo = f"Certificado_Inscripcion_{student_data.get('nombre', 'Aspirante').replace(' ', '_')}.pdf"
         
+        # Emitir evento Observer
+        emit_certificate_generated({
+            'student_id': student_id,
+            'nombre': student_data.get('nombre'),
+            'certificate_name': nombre_archivo
+        })
+        
+        # Enviar notificación con Bridge
+        try:
+            notify_certificate_generated(student_data, nombre_archivo)
+        except Exception as e:
+            print(f"⚠️ Error en notificación Bridge: {e}")
+        
         return send_file(
             pdf_buffer,
             mimetype='application/pdf',
@@ -112,23 +140,24 @@ def inscripcion():
     if 'user' not in session:
         return redirect(url_for('main.login'))
     if request.method == 'POST':
+        # Validar datos con Chain of Responsibility
+        existing_students = repo.list_students()
+        is_valid, error_message = validate_student_data_for_routes(request.form, existing_students)
+        
+        if not is_valid:
+            flash(error_message, 'danger')
+            return redirect(url_for('main.inscripcion'))
+        
+        # Extraer datos validados
         periodo = request.form.get('periodo')
         carrera = request.form.get('carrera')
         apellidos = request.form.get('apellidos', '').strip()
         nombres = request.form.get('nombres', '').strip()
         correo = request.form.get('correo', '').strip()
         dni = request.form.get('dni', '').strip()
-        if not periodo:
-            flash('Seleccione un período', 'danger')
-            return redirect(url_for('main.inscripcion'))
-        if not carrera:
-            flash('Seleccione una carrera', 'danger')
-            return redirect(url_for('main.inscripcion'))
-        if not (apellidos or nombres) or not correo:
-            flash('Apellidos/Nombres y correo son obligatorios', 'danger')
-            return redirect(url_for('main.inscripcion'))
+        
+        # Verificar período activo
         periods = repo.list_periods()
-        # Buscar período por ID (funciona con int o string)
         p = next((p for p in periods if str(p['id']) == str(periodo)), None)
         if p is None:
             flash('Período no encontrado', 'danger')
@@ -136,11 +165,46 @@ def inscripcion():
         if p and not p.get('active'):
             flash('El período seleccionado no está activo.', 'danger')
             return redirect(url_for('main.inscripcion'))
+        
         try:
             # Usar el ID como string (compatible con MongoDB y SQLite)
             period_id = str(p['id']) if p else None
             career_id = str(carrera) if carrera else None
-            repo.add_student(nombre=f"{apellidos} {nombres}".strip(), correo=correo, dni=dni, period_id=period_id, inscripcion_finalizada=0, apellidos=apellidos, nombres=nombres, career_id=career_id)
+            nombre_completo = f"{apellidos} {nombres}".strip()
+            
+            # Registrar estudiante
+            repo.add_student(
+                nombre=nombre_completo,
+                correo=correo,
+                dni=dni,
+                period_id=period_id,
+                inscripcion_finalizada=0,
+                apellidos=apellidos,
+                nombres=nombres,
+                career_id=career_id
+            )
+            
+            # Emitir evento Observer
+            emit_student_registered({
+                'nombre': nombre_completo,
+                'correo': correo,
+                'dni': dni,
+                'period_id': period_id,
+                'career_id': career_id
+            })
+            
+            # Enviar notificación con Bridge
+            try:
+                notify_student_registration({
+                    'nombre': nombre_completo,
+                    'correo': correo,
+                    'dni': dni,
+                    'career_id': career_id,
+                    'period_id': period_id
+                })
+            except Exception as e:
+                print(f"⚠️ Error en notificación Bridge: {e}")
+            
             flash('Aspirante registrado correctamente', 'success')
             return redirect(url_for('main.lista_aspirantes'))
         except Exception as e:

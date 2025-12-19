@@ -8,7 +8,7 @@ import sys
 import os
 
 # Importar el patrón Observer desde el directorio padre
-patron_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'patron de diseño'))
+patron_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'patrones_diseño'))
 if patron_path not in sys.path:
     sys.path.insert(0, patron_path)
 
