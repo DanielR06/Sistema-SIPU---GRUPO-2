@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inscripción - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="container">
+      <h1>Inscripción - Nuevo Aspirante</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="messages">
+            {% for category, msg in messages %}
+              <div class="alert {{ category }}">{{ msg }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post">
+        <label>Período *</label>
+        <select name="periodo" required>
+            <option value="">-- Seleccione Período --</option>
+            {% for p in periods %}
+                <option value="{{ p.id }}">{{ p.nombre }}</option>
+            {% endfor %}
+        </select>
+        <label>Carrera *</label>
+        <select name="carrera" required>
+            <option value="">-- Seleccione Carrera --</option>
+            {% for c in careers %}
+                <option value="{{ c.id }}">{{ c.nombre }}</option>
+            {% endfor %}
+        </select>
+        <label>Apellidos</label>
+        <input name="apellidos">
+        <label>Nombres</label>
+        <input name="nombres">
+        <label>Correo *</label>
+        <input name="correo" type="email" required>
+        <label>DNI</label>
+        <input name="dni">
+
+        <div class="row">
+          <button type="submit">Guardar</button>
+          <a href="{{ url_for('main.lista_aspirantes') }}" class="button secondary">Volver</a>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>
