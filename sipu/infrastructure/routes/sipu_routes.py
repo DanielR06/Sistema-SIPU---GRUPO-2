@@ -74,3 +74,117 @@ def dashboard():
         return redirect(url_for('main.login'))
         
     return render_template('dashboard.html', user=session.get('user'))
+
+@bp.route('/aspirante/documentos/<correo>')
+def descargar_documentos(correo):
+    """Genera y descarga un PDF con los documentos del aspirante."""
+    if 'user' not in session:
+        return redirect(url_for('main.login'))
+    
+    # Obtener información del aspirante
+    aspirante_doc = repo.students.find_one({'correo': correo})
+    
+    if not aspirante_doc:
+        flash('Aspirante no encontrado', 'danger')
+        return redirect(url_for('main.lista_aspirantes'))
+    
+    # Crear PDF en memoria
+    import io
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Contenedor de elementos
+    elementos = []
+    styles = getSampleStyleSheet()
+    
+    # Título
+    titulo_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=30,
+        alignment=1  # Centrado
+    )
+    elementos.append(Paragraph("DOCUMENTOS DEL ASPIRANTE", titulo_style))
+    elementos.append(Spacer(1, 0.3*inch))
+    
+    # Información del aspirante en tabla
+    datos_aspirante = [
+        ['Nombre:', aspirante_doc.get('nombre', 'N/A')],
+        ['Correo:', aspirante_doc.get('correo', 'N/A')],
+        ['DNI:', aspirante_doc.get('dni', 'N/A')],
+        ['Período:', aspirante_doc.get('period_name', 'N/A')],
+        ['Carrera:', aspirante_doc.get('career_name', 'N/A')],
+        ['Estado:', aspirante_doc.get('estado', 'Pendiente')]
+    ]
+    
+    tabla_info = Table(datos_aspirante, colWidths=[1.5*inch, 4*inch])
+    tabla_info.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('ALIGN', (1, 0), (1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
+    ]))
+    
+    elementos.append(tabla_info)
+    elementos.append(Spacer(1, 0.4*inch))
+    
+    # Sección de documentos adjuntos
+    elementos.append(Paragraph("DOCUMENTOS ADJUNTOS", styles['Heading2']))
+    elementos.append(Spacer(1, 0.2*inch))
+    
+    # Buscar documentos asociados
+    documentos = list(repo.db.documents.find({'correo': correo}))
+    
+    if documentos:
+        datos_docs = [['#', 'Tipo', 'Archivo', 'Estado', 'Observaciones']]
+        for idx, doc in enumerate(documentos, 1):
+            datos_docs.append([
+                str(idx),
+                doc.get('tipo', 'Documento'),
+                doc.get('nombre_archivo', 'sin_nombre.pdf'),
+                doc.get('estado', 'Pendiente'),
+                doc.get('obs', 'Sin observaciones')
+            ])
+        
+        tabla_docs = Table(datos_docs, colWidths=[0.4*inch, 1.5*inch, 1.8*inch, 1*inch, 1.8*inch])
+        tabla_docs.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black)
+        ]))
+        elementos.append(tabla_docs)
+    else:
+        elementos.append(Paragraph("No hay documentos registrados para este aspirante.", styles['Normal']))
+    
+    # Construir PDF
+    doc.build(elementos)
+    buffer.seek(0)
+    
+    nombre_archivo = f"documentos_{aspirante_doc.get('nombre', 'aspirante').replace(' ', '_')}.pdf"
+    
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=nombre_archivo
+    )

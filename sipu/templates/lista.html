@@ -24,7 +24,7 @@
             <td>{{ student.get('period_name', 'No asignado') }}</td>
             <td>{{ student.get('career_name', 'No asignada') }}</td>
             <td>
-                <a href="#" class="btn-edit">Ver Detalle</a>
+                <a href="{{ url_for('main.descargar_documentos', correo=student.get('correo')) }}" class="btn-edit">Ver Detalle</a>
             </td>
           </tr>
           {% endfor %}

@@ -34,12 +34,19 @@ class SipuService:
         """
         Lógica de autenticación que desacopla la UI de la base de datos.
         """
-        # Aquí puedes usar tu auth_service o buscar directamente en el repositorio
-        usuario = self.repository.obtener_aspirante_por_correo(correo)
+        # Buscamos el usuario directamente en la colección de estudiantes
+        # para obtener todos los datos incluyendo la contraseña
+        usuario_doc = self.repository.students.find_one({'correo': correo})
         
-        # Simulación de validación de contraseña (puedes mejorarla con hash)
-        if usuario and contrasena == "123": # Credencial temporal del placeholder
-            return usuario
+        if usuario_doc and usuario_doc.get('contrasena') == contrasena:
+            # Creamos el objeto de dominio apropiado
+            if usuario_doc.get('rol') == 'admin':
+                from ..domain.models import Administrador
+                return Administrador(nombre=usuario_doc['nombre'], correo=usuario_doc['correo'])
+            else:
+                aspirante = Aspirante(nombre=usuario_doc['nombre'], correo=usuario_doc['correo'])
+                aspirante.estado = usuario_doc.get('estado', 'Pendiente')
+                return aspirante
         return None
     def registrar_nuevo_aspirante(self, nombre: str, correo: str) -> bool:
         """
