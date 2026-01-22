@@ -49,6 +49,55 @@ def seed_catalogos(db):
     
     print(">>> Catálogos de Período, Carrera y Sede configurados.")
 
+def seed_laboratorios(db):
+    """Crea los laboratorios por sede con capacidad de máquinas."""
+    laboratorios = [
+        # Sede Principal
+        {
+            'id': 'lab_principal_1',
+            'nombre': 'Laboratorio 1',
+            'sede': 'principal',
+            'capacidad': 20,
+            'descripcion': 'Lab Principal - 20 computadoras'
+        },
+        {
+            'id': 'lab_principal_2',
+            'nombre': 'Laboratorio 2',
+            'sede': 'principal',
+            'capacidad': 20,
+            'descripcion': 'Lab Principal - 20 computadoras'
+        },
+        # Sede Norte
+        {
+            'id': 'lab_norte_1',
+            'nombre': 'Laboratorio 1',
+            'sede': 'norte',
+            'capacidad': 15,
+            'descripcion': 'Lab Norte - 15 computadoras'
+        },
+        # Sede Sur
+        {
+            'id': 'lab_sur_1',
+            'nombre': 'Laboratorio 1',
+            'sede': 'sur',
+            'capacidad': 15,
+            'descripcion': 'Lab Sur - 15 computadoras'
+        },
+        # Sede Este
+        {
+            'id': 'lab_este_1',
+            'nombre': 'Laboratorio 1',
+            'sede': 'este',
+            'capacidad': 10,
+            'descripcion': 'Lab Este - 10 computadoras'
+        },
+    ]
+    
+    db.laboratories.delete_many({})
+    db.laboratories.insert_many(laboratorios)
+    
+    print(">>> Laboratorios configurados (5 labs con capacidad total de 80 máquinas).")
+
 def main():
     print(">>> Iniciando proceso de seed...")
     # Obtenemos la conexión única a través del Singleton configurado en infrastructure
@@ -57,6 +106,7 @@ def main():
     
     seed_admin(db)
     seed_catalogos(db)
+    seed_laboratorios(db)
     
     print(">>> Base de datos SIPU inicializada exitosamente.")
 

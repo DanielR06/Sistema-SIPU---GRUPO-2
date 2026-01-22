@@ -37,6 +37,7 @@
 
       <div class="actions">
         {% if inscripcion_completada %}
+          <a href="{{ url_for('main.mis_examenes') }}" class="button">📋 Mis Exámenes</a>
           <a href="{{ url_for('auth.logout') }}" class="button secondary">Cerrar Sesión</a>
         {% else %}
           <a href="{{ url_for('main.inscripcion') }}" class="button">Completar Inscripción</a>
@@ -49,10 +50,10 @@
         <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px; color: #155724;">
           <h3>✅ Inscripción Completada</h3>
           <p>Tu inscripción ha sido finalizada correctamente.</p>
-          <p><strong>Periodo:</strong> {{ aspirante.get('periodo', 'N/A') }}</p>
-          <p><strong>Carrera:</strong> {{ aspirante.get('carrera', 'N/A') }}</p>
+          <p><strong>Periodo:</strong> {{ aspirante.get('periodo_nombre', 'N/A') }}</p>
+          <p><strong>Carrera:</strong> {{ aspirante.get('carrera_nombre', 'N/A') }}</p>
           <p><strong>Jornada:</strong> {{ aspirante.get('jornada', 'N/A') }}</p>
-          <p><strong>Sede:</strong> {{ aspirante.get('sede', 'N/A') }}</p>
+          <p><strong>Sede:</strong> {{ aspirante.get('sede_nombre', 'N/A') }}</p>
           <p style="margin-top: 15px;">
             <a href="{{ url_for('main.descargar_pdf', dni=aspirante.get('dni')) }}" class="button" style="display: inline-block; margin-top: 10px;">📄 Descargar Reporte PDF</a>
           </p>

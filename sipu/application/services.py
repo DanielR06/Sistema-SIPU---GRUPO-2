@@ -258,3 +258,115 @@ class SipuService:
             print(f"Error: {e}")
             return False, str(e)
     
+    # ========== MÉTODOS PARA EXÁMENES ==========
+    
+    def distribuir_aspirantes_en_examenes(self, examen_id: str) -> tuple:
+        """
+        Distribuye automáticamente aspirantes en laboratorios para un examen.
+        Retorna (éxito: bool, mensaje: str)
+        """
+        try:
+            # 1. Obtener datos del examen
+            examen = self.repository.obtener_examen_por_id(examen_id)
+            if not examen:
+                return False, "Examen no encontrado"
+            
+            periodo = examen.get('periodo')
+            carrera = examen.get('carrera')
+            jornada = examen.get('jornada')
+            
+            # 2. Obtener aspirantes que pertenecen a este examen
+            todos_aspirantes = self.repository.listar_estudiantes_crudos()
+            aspirantes_examen = [
+                a for a in todos_aspirantes 
+                if a.get('estado') == 'Inscrito' and 
+                   a.get('periodo') == periodo and 
+                   a.get('carrera') == carrera and 
+                   a.get('jornada') == jornada and 
+                   a.get('rol') == 'aspirante'
+            ]
+            
+            if not aspirantes_examen:
+                return False, "No hay aspirantes para este examen"
+            
+            # 3. Obtener laboratorios disponibles
+            laboratorios = self.repository.obtener_laboratorios()
+            if not laboratorios:
+                return False, "No hay laboratorios disponibles"
+            
+            # 4. Calcular distribución (usando round-robin)
+            total_aspirantes = len(aspirantes_examen)
+            total_capacidad = sum(lab['capacidad'] for lab in laboratorios)
+            
+            if total_capacidad < total_aspirantes:
+                return False, f"Capacidad insuficiente: {total_aspirantes} aspirantes vs {total_capacidad} computadoras"
+            
+            # 5. Eliminar asignaciones anteriores si existen
+            self.repository.eliminar_asignaciones_examen(examen_id)
+            
+            # 6. Crear asignaciones distribuidas
+            lab_index = 0
+            comp_numero = 1  # Número de computadora dentro del lab
+            contador_asignaciones = 0
+            
+            for aspirante in aspirantes_examen:
+                lab_actual = laboratorios[lab_index]
+                
+                asignacion = {
+                    'id': f"asig_{examen_id}_{aspirante['correo']}",
+                    'examen_id': examen_id,
+                    'aspirante_correo': aspirante['correo'],
+                    'aspirante_nombre': aspirante['nombre'],
+                    'lab_id': lab_actual['id'],
+                    'lab_nombre': lab_actual['nombre'],
+                    'num_computadora': comp_numero,
+                    'sede': lab_actual['sede'],
+                    'estado': 'Pendiente'
+                }
+                
+                self.repository.crear_asignacion_examen(asignacion)
+                contador_asignaciones += 1
+                
+                # Avanzar a siguiente computadora
+                comp_numero += 1
+                
+                # Si se alcanzó la capacidad del lab, pasar al siguiente
+                if comp_numero > lab_actual['capacidad']:
+                    comp_numero = 1
+                    lab_index += 1
+                    
+                    # Si no hay más labs, reiniciar (distribuir en múltiples tandas)
+                    if lab_index >= len(laboratorios):
+                        lab_index = 0
+            
+            mensaje = f"✅ {contador_asignaciones} aspirantes distribuidos en {len(laboratorios)} laboratorios"
+            return True, mensaje
+        
+        except Exception as e:
+            print(f"Error en distribución: {e}")
+            return False, f"Error: {str(e)}"
+    
+    def obtener_examen_aspirante(self, correo: str):
+        """Obtiene el examen asignado a un aspirante con toda la información."""
+        try:
+            asignaciones = self.repository.obtener_asignaciones_por_aspirante(correo)
+            
+            if not asignaciones:
+                return None
+            
+            # Tomar la primera asignación (un aspirante puede tener múltiples, pero devolvemos el primero pendiente)
+            asignacion = next((a for a in asignaciones if a['estado'] == 'Pendiente'), asignaciones[0])
+            
+            examen = self.repository.obtener_examen_por_id(asignacion['examen_id'])
+            
+            if examen:
+                asignacion['examen_fecha'] = examen.get('fecha')
+                asignacion['examen_hora_inicio'] = examen.get('hora_inicio')
+                asignacion['examen_hora_fin'] = examen.get('hora_fin')
+            
+            return asignacion
+        
+        except Exception as e:
+            print(f"Error al obtener examen: {e}")
+            return None
+    

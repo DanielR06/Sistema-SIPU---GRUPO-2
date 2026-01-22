@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mis Exámenes - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+      .header-aspirante {
+        background-color: #27ae60;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .button.secondary {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button.secondary:hover {
+        background-color: #7f8c8d;
+      }
+      .exam-card {
+        background-color: white;
+        border-left: 4px solid #3498db;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+      }
+      .exam-card h2 {
+        color: #2c3e50;
+        margin-top: 0;
+      }
+      .exam-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 15px 0;
+      }
+      .detail-item {
+        padding: 10px;
+        background-color: #ecf0f1;
+        border-radius: 4px;
+      }
+      .detail-item strong {
+        color: #2c3e50;
+        display: block;
+        margin-bottom: 5px;
+      }
+      .detail-item p {
+        margin: 0;
+        color: #34495e;
+        font-size: 16px;
+      }
+      .alert {
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      .alert.info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="header-aspirante">
+        <h1>Mis Exámenes</h1>
+        <p>Bienvenido, {{ user }}</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="actions">
+        <a href="{{ url_for('main.aspirante_dashboard') }}" class="button secondary">← Volver al Dashboard</a>
+        <a href="{{ url_for('auth.logout') }}" class="button secondary">Cerrar Sesión</a>
+      </div>
+
+      {% if examen %}
+        <div class="exam-card">
+          <h2>📋 Examen Programado</h2>
+          
+          <div class="exam-details">
+            <div class="detail-item">
+              <strong>Fecha del Examen</strong>
+              <p>{{ examen.examen_fecha }}</p>
+            </div>
+            <div class="detail-item">
+              <strong>Horario</strong>
+              <p>{{ examen.examen_hora_inicio }} - {{ examen.examen_hora_fin }}</p>
+            </div>
+            <div class="detail-item">
+              <strong>Sede Asignada</strong>
+              <p>{{ examen.sede }}</p>
+            </div>
+            <div class="detail-item">
+              <strong>Laboratorio</strong>
+              <p>{{ examen.lab_nombre }}</p>
+            </div>
+            <div class="detail-item">
+              <strong>Número de Computadora</strong>
+              <p style="font-size: 20px; font-weight: bold; color: #3498db;">{{ examen.num_computadora }}</p>
+            </div>
+            <div class="detail-item">
+              <strong>Estado</strong>
+              <p style="color: #f39c12; font-weight: bold;">⏳ Pendiente</p>
+            </div>
+          </div>
+
+          <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; border-radius: 4px; margin-top: 20px;">
+            <h3 style="margin-top: 0; color: #2c3e50;">⏰ Importante</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+              <li>Llega 15 minutos antes del inicio del examen</li>
+              <li>Presenta tu documento de identificación (DNI/Cédula)</li>
+              <li>Dirígete a la computadora número <strong>{{ examen.num_computadora }}</strong> en el laboratorio <strong>{{ examen.lab_nombre }}</strong></li>
+              <li>Si tienes problemas técnicos, notifica al supervisor del laboratorio</li>
+            </ul>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert info">
+          <h3>ℹ️ Sin Exámenes Asignados</h3>
+          <p>No tienes exámenes asignados aún. Los exámenes se asignarán una vez que el administrador genere la distribución.</p>
+          <p>Completa tu inscripción y espera la confirmación del examen.</p>
+        </div>
+      {% endif %}
+    </main>
+  </body>
+</html>

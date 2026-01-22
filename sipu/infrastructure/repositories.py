@@ -112,3 +112,71 @@ class MongoSipuRepository(ISipuRepository):
 
     def close(self):
         self.client.close()
+    
+    # ========== MÉTODOS PARA EXÁMENES ==========
+    
+    def obtener_laboratorios(self):
+        """Retorna todos los laboratorios disponibles."""
+        return list(self.db.laboratories.find())
+    
+    def obtener_laboratorios_por_sede(self, sede: str):
+        """Retorna los laboratorios de una sede específica."""
+        return list(self.db.laboratories.find({'sede': sede}))
+    
+    def crear_examen(self, examen_dict: dict) -> bool:
+        """Crea un nuevo examen."""
+        try:
+            self.db.examenes.insert_one(examen_dict)
+            return True
+        except Exception as e:
+            print(f"Error al crear examen: {e}")
+            return False
+    
+    def obtener_examenes(self):
+        """Retorna todos los exámenes."""
+        return list(self.db.examenes.find())
+    
+    def obtener_examenes_por_periodo_carrera_jornada(self, periodo: str, carrera: str, jornada: str):
+        """Obtiene exámenes para una combinación específica."""
+        return list(self.db.examenes.find({
+            'periodo': periodo,
+            'carrera': carrera,
+            'jornada': jornada
+        }))
+    
+    def obtener_examen_por_id(self, examen_id: str):
+        """Obtiene un examen específico por su ID."""
+        return self.db.examenes.find_one({'id': examen_id})
+    
+    def crear_asignacion_examen(self, asignacion_dict: dict) -> bool:
+        """Crea una asignación de aspirante a examen."""
+        try:
+            self.db.asignaciones_examen.insert_one(asignacion_dict)
+            return True
+        except Exception as e:
+            print(f"Error al crear asignación: {e}")
+            return False
+    
+    def obtener_asignaciones_por_examen(self, examen_id: str):
+        """Obtiene todas las asignaciones para un examen."""
+        return list(self.db.asignaciones_examen.find({'examen_id': examen_id}))
+    
+    def obtener_asignaciones_por_aspirante(self, correo: str):
+        """Obtiene los exámenes asignados a un aspirante."""
+        return list(self.db.asignaciones_examen.find({'aspirante_correo': correo}))
+    
+    def contar_asignaciones_por_lab(self, lab_id: str, examen_id: str) -> int:
+        """Cuenta cuántas personas están asignadas a un laboratorio en un examen."""
+        return self.db.asignaciones_examen.count_documents({
+            'lab_id': lab_id,
+            'examen_id': examen_id
+        })
+    
+    def eliminar_asignaciones_examen(self, examen_id: str) -> bool:
+        """Elimina todas las asignaciones de un examen (para regenerar)."""
+        try:
+            self.db.asignaciones_examen.delete_many({'examen_id': examen_id})
+            return True
+        except Exception as e:
+            print(f"Error al eliminar asignaciones: {e}")
+            return False

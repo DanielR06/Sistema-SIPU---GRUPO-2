@@ -116,3 +116,66 @@ class Reporte: pass
 class Postulacion: pass
 class OfertaAcademica: pass
 class Carrera: pass
+
+# ==========================================
+# SECCIÓN: EXÁMENES (Nueva funcionalidad)
+# ==========================================
+
+class Examen:
+    """Representa un examen con fecha, hora y criterios."""
+    def __init__(self, id_examen: str, periodo: str, carrera: str, jornada: str, 
+                 fecha: str, hora_inicio: str, hora_fin: str):
+        self.id = id_examen
+        self.periodo = periodo
+        self.carrera = carrera
+        self.jornada = jornada
+        self.fecha = fecha
+        self.hora_inicio = hora_inicio
+        self.hora_fin = hora_fin
+        self.estado = 'Activo'  # Activo, Completado, Cancelado
+
+    @property
+    def hora_inicio(self): return self._hora_inicio
+    
+    @hora_inicio.setter
+    def hora_inicio(self, valor):
+        self._hora_inicio = valor
+
+    @property
+    def hora_fin(self): return self._hora_fin
+    
+    @hora_fin.setter
+    def hora_fin(self, valor):
+        self._hora_fin = valor
+
+class AsignacionExamen:
+    """Asigna un aspirante a un laboratorio y computadora específicos para un examen."""
+    def __init__(self, id_asignacion: str, examen_id: str, aspirante_correo: str,
+                 lab_id: str, num_computadora: int, sede: str):
+        self.id = id_asignacion
+        self.examen_id = examen_id
+        self.aspirante_correo = aspirante_correo
+        self.lab_id = lab_id
+        self.num_computadora = num_computadora
+        self.sede = sede
+        self.estado = 'Pendiente'  # Pendiente, Presentado, No presentado, Calificado
+
+    @property
+    def estado(self): return self._estado
+    
+    @estado.setter
+    def estado(self, nuevo_estado):
+        validos = ['Pendiente', 'Presentado', 'No presentado', 'Calificado']
+        if nuevo_estado in validos:
+            self._estado = nuevo_estado
+        else:
+            raise ValueError(f"Estado no válido. Use: {validos}")
+
+class Laboratorio:
+    """Representa un laboratorio con su capacidad."""
+    def __init__(self, id_lab: str, nombre: str, sede: str, capacidad: int):
+        self.id = id_lab
+        self.nombre = nombre
+        self.sede = sede
+        self.capacidad = capacidad
+        self.descripcion = f"{nombre} - {capacidad} computadoras"

@@ -161,6 +161,20 @@ def aspirante_dashboard():
     # Determinar estado de inscripción
     inscripcion_completada = aspirante and aspirante.get('estado') == 'Inscrito'
     
+    # Mapear IDs a nombres completos para mostrar en dashboard
+    if aspirante and inscripcion_completada:
+        periodos = list(repo.db.periods.find())
+        carreras = list(repo.db.careers.find())
+        sedes = list(repo.db.sedes.find())
+        
+        per_map = {p.get('id'): p.get('nombre') for p in periodos}
+        car_map = {c.get('id'): c.get('nombre') for c in carreras}
+        sed_map = {s.get('id'): s.get('nombre') for s in sedes}
+        
+        aspirante['periodo_nombre'] = per_map.get(aspirante.get('periodo'), aspirante.get('periodo', 'N/A'))
+        aspirante['carrera_nombre'] = car_map.get(aspirante.get('carrera'), aspirante.get('carrera', 'N/A'))
+        aspirante['sede_nombre'] = sed_map.get(aspirante.get('sede'), aspirante.get('sede', 'N/A'))
+    
     return render_template('aspirante_dashboard.html', 
                          user=session.get('user'),
                          inscripcion_completada=inscripcion_completada,
@@ -294,3 +308,95 @@ def descargar_documentos(correo):
         as_attachment=True,
         download_name=nombre_archivo
     )
+
+# ========== RUTAS PARA EXÁMENES ==========
+
+@bp.route('/admin/examenes', methods=['GET', 'POST'])
+def admin_examenes():
+    """Dashboard de administración de exámenes."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        # Crear nuevo examen
+        import uuid
+        examen_id = str(uuid.uuid4())[:8]
+        
+        nuevo_examen = {
+            'id': examen_id,
+            'periodo': request.form.get('periodo'),
+            'carrera': request.form.get('carrera'),
+            'jornada': request.form.get('jornada'),
+            'fecha': request.form.get('fecha'),
+            'hora_inicio': request.form.get('hora_inicio'),
+            'hora_fin': request.form.get('hora_fin'),
+            'estado': 'Activo'
+        }
+        
+        if sipu_service.repository.crear_examen(nuevo_examen):
+            flash(f'Examen creado correctamente (ID: {examen_id})', 'success')
+        else:
+            flash('Error al crear el examen', 'danger')
+        
+        return redirect(url_for('main.admin_examenes'))
+    
+    # GET: Mostrar lista de exámenes
+    examenes = sipu_service.repository.obtener_examenes()
+    periodos = sipu_service.repository.obtener_periodos()
+    carreras = sipu_service.repository.obtener_carreras()
+    
+    return render_template('admin_examenes.html',
+                         user=session.get('user'),
+                         examenes=examenes,
+                         periodos=periodos,
+                         carreras=carreras)
+
+@bp.route('/admin/distribuir-examen/<examen_id>', methods=['POST'])
+def distribuir_examen(examen_id):
+    """Genera automáticamente la distribución de aspirantes para un examen."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    exito, mensaje = sipu_service.distribuir_aspirantes_en_examenes(examen_id)
+    
+    if exito:
+        flash(mensaje, 'success')
+    else:
+        flash(f'❌ {mensaje}', 'danger')
+    
+    return redirect(url_for('main.admin_examenes'))
+
+@bp.route('/admin/examenes/<examen_id>')
+def ver_asignaciones_examen(examen_id):
+    """Ve las asignaciones de aspirantes para un examen específico."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    examen = sipu_service.repository.obtener_examen_por_id(examen_id)
+    asignaciones = sipu_service.repository.obtener_asignaciones_por_examen(examen_id)
+    
+    # Mapear nombres completos
+    periodos = {p['id']: p['nombre'] for p in sipu_service.repository.obtener_periodos()}
+    carreras = {c['id']: c['nombre'] for c in sipu_service.repository.obtener_carreras()}
+    
+    if examen:
+        examen['periodo_nombre'] = periodos.get(examen.get('periodo'), 'N/A')
+        examen['carrera_nombre'] = carreras.get(examen.get('carrera'), 'N/A')
+    
+    return render_template('ver_asignaciones_examen.html',
+                         user=session.get('user'),
+                         examen=examen,
+                         asignaciones=asignaciones)
+
+@bp.route('/aspirante/mis-examenes')
+def mis_examenes():
+    """Muestra los exámenes asignados al aspirante."""
+    if 'user' not in session or session.get('rol') != 'postulante':
+        return redirect(url_for('auth.login'))
+    
+    correo_usuario = session.get('user_email')
+    examen_asignado = sipu_service.obtener_examen_aspirante(correo_usuario) if correo_usuario else None
+    
+    return render_template('mis_examenes.html',
+                         user=session.get('user'),
+                         examen=examen_asignado)
