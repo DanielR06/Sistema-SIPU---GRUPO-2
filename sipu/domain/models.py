@@ -158,11 +158,44 @@ class AsignacionExamen:
         self.lab_id = lab_id
         self.num_computadora = num_computadora
         self.sede = sede
-        self.estado = 'Pendiente'  # Pendiente, Presentado, No presentado, Calificado
+        self.estado = 'Pendiente'  # Pendiente, Presentado, No presentado
+        self.nota = None  # 1-1000
+        self.observaciones = ""
+        self.fecha_evaluacion = None
 
     @property
     def estado(self): return self._estado
     
+    @estado.setter
+    def estado(self, nuevo_estado):
+        validos = ['Pendiente', 'Presentado', 'No presentado']
+        if nuevo_estado in validos:
+            self._estado = nuevo_estado
+        else:
+            raise ValueError(f"Estado no válido. Use: {validos}")
+    
+    @property
+    def nota(self): return self._nota
+    
+    @nota.setter
+    def nota(self, valor):
+        if valor is not None and (valor < 1 or valor > 1000):
+            raise ValueError("La nota debe estar entre 1 y 1000")
+        self._nota = valor
+    
+    @property
+    def observaciones(self): return self._observaciones
+    
+    @observaciones.setter
+    def observaciones(self, valor):
+        self._observaciones = valor if valor else ""
+    
+    @property
+    def fecha_evaluacion(self): return self._fecha_evaluacion
+    
+    @fecha_evaluacion.setter
+    def fecha_evaluacion(self, valor):
+        self._fecha_evaluacion = valor
     @estado.setter
     def estado(self, nuevo_estado):
         validos = ['Pendiente', 'Presentado', 'No presentado', 'Calificado']

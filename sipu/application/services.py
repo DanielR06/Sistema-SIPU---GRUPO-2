@@ -347,15 +347,17 @@ class SipuService:
             return False, f"Error: {str(e)}"
     
     def obtener_examen_aspirante(self, correo: str):
-        """Obtiene el examen asignado a un aspirante con toda la información."""
+        """Obtiene el examen más reciente asignado a un aspirante con toda la información."""
         try:
             asignaciones = self.repository.obtener_asignaciones_por_aspirante(correo)
             
             if not asignaciones:
                 return None
             
-            # Tomar la primera asignación (un aspirante puede tener múltiples, pero devolvemos el primero pendiente)
-            asignacion = next((a for a in asignaciones if a['estado'] == 'Pendiente'), asignaciones[0])
+            # Tomar la asignación más reciente (la última creada)
+            # O si hay múltiples, devolver la que tenga nota (ya calificada), sino la más reciente
+            asignacion_con_nota = next((a for a in asignaciones if a.get('nota')), None)
+            asignacion = asignacion_con_nota if asignacion_con_nota else asignaciones[-1]
             
             examen = self.repository.obtener_examen_por_id(asignacion['examen_id'])
             
@@ -369,4 +371,44 @@ class SipuService:
         except Exception as e:
             print(f"Error al obtener examen: {e}")
             return None
+    
+    def guardar_calificacion_aspirante(self, asignacion_id: str, presentó: bool, nota: int, observaciones: str) -> tuple:
+        """Guarda la calificación de un aspirante. Retorna (éxito, mensaje)."""
+        try:
+            if presentó:
+                if not (1 <= nota <= 1000):
+                    return False, "La nota debe estar entre 1 y 1000"
+            
+            exito = self.repository.guardar_calificacion(asignacion_id, presentó, nota, observaciones)
+            
+            if exito:
+                return True, "Calificación guardada correctamente"
+            else:
+                return False, "Error al guardar la calificación"
+        
+        except Exception as e:
+            return False, str(e)
+    
+    def obtener_calificaciones_aspirante(self, correo: str):
+        """Obtiene todas las calificaciones de un aspirante con información del examen."""
+        try:
+            calificaciones = self.repository.obtener_calificaciones_aspirante(correo)
+            
+            # Enriquecer con información del examen
+            for cal in calificaciones:
+                examen = self.repository.obtener_examen_por_id(cal.get('examen_id'))
+                if examen:
+                    periodos = {p['id']: p['nombre'] for p in self.repository.obtener_periodos()}
+                    carreras = {c['id']: c['nombre'] for c in self.repository.obtener_carreras()}
+                    
+                    cal['examen_periodo'] = periodos.get(examen.get('periodo'), 'N/A')
+                    cal['examen_carrera'] = carreras.get(examen.get('carrera'), 'N/A')
+                    cal['examen_jornada'] = examen.get('jornada')
+                    cal['examen_fecha'] = examen.get('fecha')
+            
+            return calificaciones
+        
+        except Exception as e:
+            print(f"Error al obtener calificaciones: {e}")
+            return []
     

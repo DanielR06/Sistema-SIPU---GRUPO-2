@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Evaluar Examen - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+      .header-admin {
+        background-color: #2c3e50;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+      }
+      .examen-info {
+        background-color: #ecf0f1;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 15px;
+      }
+      .info-item strong {
+        display: block;
+        color: #2c3e50;
+        margin-bottom: 5px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      table th {
+        background-color: #3498db;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: bold;
+      }
+      table td {
+        padding: 10px;
+        border-bottom: 1px solid #ecf0f1;
+      }
+      table tr:hover {
+        background-color: #f9f9f9;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .form-group input,
+      .form-group textarea {
+        padding: 6px;
+        border: 1px solid #bdc3c7;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+      .form-group input[type="checkbox"] {
+        width: auto;
+      }
+      .button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .button.primary {
+        background-color: #3498db;
+        color: white;
+      }
+      .button.primary:hover {
+        background-color: #2980b9;
+      }
+      .button.secondary {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button.secondary:hover {
+        background-color: #7f8c8d;
+      }
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="header-admin">
+        <h1>Evaluar Examen</h1>
+        <p>Admin: {{ user }}</p>
+        <a href="{{ url_for('main.admin_examenes') }}" class="button secondary" style="margin-top: 10px;">← Volver</a>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% if examen %}
+        <div class="examen-info">
+          <div class="info-item">
+            <strong>Período:</strong>
+            <p>{{ examen.periodo_nombre }}</p>
+          </div>
+          <div class="info-item">
+            <strong>Carrera:</strong>
+            <p>{{ examen.carrera_nombre }}</p>
+          </div>
+          <div class="info-item">
+            <strong>Jornada:</strong>
+            <p>{{ examen.jornada }}</p>
+          </div>
+          <div class="info-item">
+            <strong>Fecha:</strong>
+            <p>{{ examen.fecha }} {{ examen.hora_inicio }} - {{ examen.hora_fin }}</p>
+          </div>
+        </div>
+      {% endif %}
+
+      <h2>Calificar Aspirantes ({{ asignaciones|length }})</h2>
+
+      {% if asignaciones %}
+        <form method="POST">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Computadora</th>
+                <th>¿Presentó?</th>
+                <th>Nota (1-1000)</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asignacion in asignaciones %}
+                <tr>
+                  <td>{{ asignacion.aspirante_nombre }}</td>
+                  <td>{{ asignacion.aspirante_correo }}</td>
+                  <td>{{ asignacion.lab_nombre }} - Comp. {{ asignacion.num_computadora }}</td>
+                  <td>
+                    <div class="form-group" style="flex-direction: row; margin: 0;">
+                      <label class="checkbox-label">
+                        <input type="checkbox" name="presentó_{{ asignacion.id }}" value="on">
+                        Presentó
+                      </label>
+                    </div>
+                  </td>
+                  <td>
+                    <input type="number" name="nota_{{ asignacion.id }}" min="1" max="1000" placeholder="1-1000">
+                  </td>
+                  <td>
+                    <textarea name="observaciones_{{ asignacion.id }}" rows="2" placeholder="(opcional)"></textarea>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <div class="button-group">
+            <button type="submit" class="button primary">💾 Guardar Calificaciones</button>
+            <a href="{{ url_for('main.admin_examenes') }}" class="button secondary">Cancelar</a>
+          </div>
+        </form>
+      {% else %}
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; color: #856404;">
+          <p>No hay aspirantes asignados a este examen.</p>
+        </div>
+      {% endif %}
+    </main>
+  </body>
+</html>

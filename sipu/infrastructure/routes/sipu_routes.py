@@ -400,3 +400,55 @@ def mis_examenes():
     return render_template('mis_examenes.html',
                          user=session.get('user'),
                          examen=examen_asignado)
+
+@bp.route('/admin/evaluar-examen/<examen_id>', methods=['GET', 'POST'])
+def evaluar_examen(examen_id):
+    """Admin califica a los aspirantes de un examen."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        # Procesar calificaciones
+        asignaciones = sipu_service.repository.obtener_asignaciones_por_examen(examen_id)
+        
+        for asignacion in asignaciones:
+            asignacion_id = asignacion['id']
+            
+            # Obtener datos del formulario
+            presentó = request.form.get(f'presentó_{asignacion_id}') == 'on'
+            nota = request.form.get(f'nota_{asignacion_id}', '')
+            observaciones = request.form.get(f'observaciones_{asignacion_id}', '')
+            
+            # Validar y guardar
+            nota_int = None
+            if presentó and nota:
+                try:
+                    nota_int = int(nota)
+                    if not (1 <= nota_int <= 1000):
+                        flash(f"Nota inválida para {asignacion['aspirante_nombre']}: debe estar entre 1-1000", 'danger')
+                        continue
+                except ValueError:
+                    flash(f"Nota inválida para {asignacion['aspirante_nombre']}", 'danger')
+                    continue
+            
+            sipu_service.guardar_calificacion_aspirante(asignacion_id, presentó, nota_int, observaciones)
+        
+        flash('Calificaciones guardadas correctamente', 'success')
+        return redirect(url_for('main.ver_asignaciones_examen', examen_id=examen_id))
+    
+    # GET: Mostrar formulario de evaluación
+    examen = sipu_service.repository.obtener_examen_por_id(examen_id)
+    asignaciones = sipu_service.repository.obtener_asignaciones_por_examen(examen_id)
+    
+    # Mapear nombres completos
+    periodos = {p['id']: p['nombre'] for p in sipu_service.repository.obtener_periodos()}
+    carreras = {c['id']: c['nombre'] for c in sipu_service.repository.obtener_carreras()}
+    
+    if examen:
+        examen['periodo_nombre'] = periodos.get(examen.get('periodo'), 'N/A')
+        examen['carrera_nombre'] = carreras.get(examen.get('carrera'), 'N/A')
+    
+    return render_template('evaluar_examen.html',
+                         user=session.get('user'),
+                         examen=examen,
+                         asignaciones=asignaciones)

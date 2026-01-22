@@ -126,19 +126,44 @@
             </div>
             <div class="detail-item">
               <strong>Estado</strong>
-              <p style="color: #f39c12; font-weight: bold;">⏳ Pendiente</p>
+              <p>
+                {% if examen.nota %}
+                  {% if examen.nota >= 800 %}
+                    <span style="color: #27ae60; font-weight: bold; font-size: 16px;">✅ Calificado: {{ examen.nota }}/1000</span>
+                  {% elif examen.nota >= 600 %}
+                    <span style="color: #3498db; font-weight: bold; font-size: 16px;">✅ Calificado: {{ examen.nota }}/1000</span>
+                  {% elif examen.nota >= 400 %}
+                    <span style="color: #f39c12; font-weight: bold; font-size: 16px;">✅ Calificado: {{ examen.nota }}/1000</span>
+                  {% else %}
+                    <span style="color: #e74c3c; font-weight: bold; font-size: 16px;">✅ Calificado: {{ examen.nota }}/1000</span>
+                  {% endif %}
+                {% elif examen.estado == 'Presentado' %}
+                  <span style="color: #f39c12; font-weight: bold;">⏳ Presentado (Pendiente calificación)</span>
+                {% elif examen.estado == 'No presentado' %}
+                  <span style="color: #e74c3c; font-weight: bold;">❌ No Presentado</span>
+                {% else %}
+                  <span style="color: #f39c12; font-weight: bold;">⏳ Pendiente</span>
+                {% endif %}
+              </p>
             </div>
           </div>
 
-          <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; border-radius: 4px; margin-top: 20px;">
-            <h3 style="margin-top: 0; color: #2c3e50;">⏰ Importante</h3>
-            <ul style="margin: 0; padding-left: 20px;">
-              <li>Llega 15 minutos antes del inicio del examen</li>
-              <li>Presenta tu documento de identificación (DNI/Cédula)</li>
-              <li>Dirígete a la computadora número <strong>{{ examen.num_computadora }}</strong> en el laboratorio <strong>{{ examen.lab_nombre }}</strong></li>
-              <li>Si tienes problemas técnicos, notifica al supervisor del laboratorio</li>
-            </ul>
-          </div>
+          {% if not examen.nota %}
+            <div style="background-color: #e8f4f8; border-left: 4px solid #3498db; padding: 15px; border-radius: 4px; margin-top: 20px;">
+              <h3 style="margin-top: 0; color: #2c3e50;">⏰ Importante</h3>
+              <ul style="margin: 0; padding-left: 20px;">
+                <li>Llega 15 minutos antes del inicio del examen</li>
+                <li>Presenta tu documento de identificación (DNI/Cédula)</li>
+                <li>Dirígete a la computadora número <strong>{{ examen.num_computadora }}</strong> en el laboratorio <strong>{{ examen.lab_nombre }}</strong></li>
+                <li>Si tienes problemas técnicos, notifica al supervisor del laboratorio</li>
+              </ul>
+            </div>
+          {% else %}
+            <div style="background-color: #d4edda; border-left: 4px solid #27ae60; padding: 15px; border-radius: 4px; margin-top: 20px;">
+              <h3 style="margin-top: 0; color: #155724;">✅ Examen Calificado</h3>
+              <p>Tu examen ha sido evaluado. Revisa tu calificación en la sección <strong>Mis Calificaciones</strong> para ver detalles adicionales.</p>
+            </div>
+          {% endif %}
         </div>
       {% else %}
         <div class="alert info">

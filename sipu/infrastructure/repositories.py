@@ -180,3 +180,30 @@ class MongoSipuRepository(ISipuRepository):
         except Exception as e:
             print(f"Error al eliminar asignaciones: {e}")
             return False
+    
+    def guardar_calificacion(self, asignacion_id: str, presentó: bool, nota: int, observaciones: str) -> bool:
+        """Guarda la calificación de un aspirante."""
+        try:
+            from datetime import datetime
+            
+            estado = 'Presentado' if presentó else 'No presentado'
+            
+            actualizar = {
+                'estado': estado,
+                'nota': nota if presentó else None,
+                'observaciones': observaciones,
+                'fecha_evaluacion': datetime.now().isoformat() if presentó else None
+            }
+            
+            result = self.db.asignaciones_examen.update_one(
+                {'id': asignacion_id},
+                {'$set': actualizar}
+            )
+            return result.acknowledged
+        except Exception as e:
+            print(f"Error al guardar calificación: {e}")
+            return False
+    
+    def obtener_calificaciones_aspirante(self, correo: str):
+        """Obtiene todas las calificaciones de un aspirante."""
+        return list(self.db.asignaciones_examen.find({'aspirante_correo': correo}))

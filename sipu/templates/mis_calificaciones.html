@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mis Calificaciones - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+      .header-aspirante {
+        background-color: #27ae60;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .button.secondary {
+        background-color: #95a5a6;
+        color: white;
+      }
+      .button.secondary:hover {
+        background-color: #7f8c8d;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-top: 20px;
+      }
+      table th {
+        background-color: #3498db;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: bold;
+      }
+      table td {
+        padding: 12px;
+        border-bottom: 1px solid #ecf0f1;
+      }
+      table tr:hover {
+        background-color: #f9f9f9;
+      }
+      .nota-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        color: white;
+      }
+      .nota-excelente {
+        background-color: #27ae60;
+      }
+      .nota-buena {
+        background-color: #3498db;
+      }
+      .nota-regular {
+        background-color: #f39c12;
+      }
+      .nota-baja {
+        background-color: #e74c3c;
+      }
+      .nota-no-presentado {
+        background-color: #95a5a6;
+      }
+      .alert {
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+      .alert.info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="header-aspirante">
+        <h1>Mis Calificaciones</h1>
+        <p>Bienvenido, {{ user }}</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="actions">
+        <a href="{{ url_for('main.aspirante_dashboard') }}" class="button secondary">← Volver al Dashboard</a>
+        <a href="{{ url_for('auth.logout') }}" class="button secondary">Cerrar Sesión</a>
+      </div>
+
+      {% if calificaciones %}
+        <h2>Historial de Exámenes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Período</th>
+              <th>Carrera</th>
+              <th>Jornada</th>
+              <th>Fecha Examen</th>
+              <th>Estado</th>
+              <th>Nota</th>
+              <th>Observaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for cal in calificaciones %}
+              <tr>
+                <td>{{ cal.examen_periodo }}</td>
+                <td>{{ cal.examen_carrera }}</td>
+                <td>{{ cal.examen_jornada }}</td>
+                <td>{{ cal.examen_fecha }}</td>
+                <td>
+                  {% if cal.estado == 'Presentado' %}
+                    <span style="color: #27ae60; font-weight: bold;">✅ Presentado</span>
+                  {% elif cal.estado == 'No presentado' %}
+                    <span style="color: #e74c3c; font-weight: bold;">❌ No Presentado</span>
+                  {% else %}
+                    {{ cal.estado }}
+                  {% endif %}
+                </td>
+                <td>
+                  {% if cal.estado == 'Presentado' %}
+                    {% if cal.nota %}
+                      {% if cal.nota >= 800 %}
+                        <span class="nota-badge nota-excelente">{{ cal.nota }}/1000</span>
+                      {% elif cal.nota >= 600 %}
+                        <span class="nota-badge nota-buena">{{ cal.nota }}/1000</span>
+                      {% elif cal.nota >= 400 %}
+                        <span class="nota-badge nota-regular">{{ cal.nota }}/1000</span>
+                      {% else %}
+                        <span class="nota-badge nota-baja">{{ cal.nota }}/1000</span>
+                      {% endif %}
+                    {% else %}
+                      <span class="nota-badge nota-no-presentado">Pendiente</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="nota-badge nota-no-presentado">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if cal.observaciones %}
+                    {{ cal.observaciones }}
+                  {% else %}
+                    <span style="color: #95a5a6;">--</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="alert info">
+          <h3>ℹ️ Sin Calificaciones</h3>
+          <p>No tienes calificaciones registradas aún. Completa tu inscripción y participa en los exámenes programados.</p>
+        </div>
+      {% endif %}
+    </main>
+  </body>
+</html>

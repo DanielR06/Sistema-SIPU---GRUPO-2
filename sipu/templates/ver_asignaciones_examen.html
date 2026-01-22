@@ -101,6 +101,11 @@
       <h2>Aspirantes Asignados ({{ asignaciones|length }})</h2>
 
       {% if asignaciones %}
+        <div style="margin-bottom: 20px;">
+          <a href="{{ url_for('main.evaluar_examen', examen_id=examen.id) }}" class="button primary">
+            📝 Calificar Aspirantes
+          </a>
+        </div>
         <table>
           <thead>
             <tr>
