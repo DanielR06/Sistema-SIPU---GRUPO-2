@@ -40,10 +40,10 @@ class MongoSipuRepository(ISipuRepository):
     def obtener_aspirante_por_correo(self, correo: str) -> Optional[Aspirante]:
         doc = self.students.find_one({'correo': correo})
         if doc:
-            # Rehidratamos el objeto con TODOS los campos de la DB
+            # Rehidratamos el objeto
             aspirante = Aspirante(
-                nombre=doc['nombre'], 
-                correo=doc['correo'],
+                nombre=doc.get('nombre'), 
+                correo=doc.get('correo'),
                 dni=doc.get('dni'),
                 periodo=doc.get('periodo'),
                 carrera=doc.get('carrera')
@@ -52,6 +52,10 @@ class MongoSipuRepository(ISipuRepository):
             return aspirante
         return None
 
+    # 2. El que usaremos para el "Camino Directo" del PDF
+    def obtener_aspirante_crudo_por_correo(self, correo: str):
+        """Retorna el diccionario directo de MongoDB sin validaciones de clase."""
+        return self.students.find_one({'correo': correo})
     # Tu método guardar_aspirante ya estaba bien, 
     # pero asegúrate de que use las variables del objeto:
     def guardar_aspirante(self, aspirante: Aspirante) -> bool:

@@ -58,38 +58,42 @@ class SipuService:
                 return aspirante
         return None
     
-    def generar_reporte_pdf(self, dni):
-        # 1. Obtener objeto completo desde el repositorio corregido
-        aspirante = self.repository.obtener_aspirante_por_dni(dni)
-        if not aspirante:
+    # application/services.py
+
+    def generar_reporte_pdf(self, correo_usuario):
+        # 1. LEER DIRECTO: Obtenemos el diccionario (no el objeto)
+        aspirante_dict = self.repository.obtener_aspirante_crudo_por_correo(correo_usuario)
+        
+        if not aspirante_dict:
             return None
 
-        # 2. Mapas de traducción (ID -> Nombre real)
-        # Esto busca en las colecciones de periodos y carreras
+        # 2. TRADUCCIÓN: Seguimos necesitando los nombres reales
         per_map = {p['id']: p['nombre'] for p in self.repository.obtener_periodos()}
         car_map = {c['id']: c['nombre'] for c in self.repository.obtener_carreras()}
 
-        # 3. Configuración del PDF
+        # 3. CONSTRUCCIÓN DEL PDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
-        pdf.cell(0, 10, "COMPROBANTE DE INSCRIPCIÓN", ln=True, align='C')
+        pdf.cell(0, 10, "REPORTE DE INSCRIPCIÓN OFICIAL", ln=True, align='C')
         pdf.ln(10)
         
         pdf.set_font("Arial", "", 12)
-        # Usamos f-strings para insertar los datos del objeto
-        pdf.cell(0, 10, f"Aspirante: {aspirante.nombre}", ln=True)
-        pdf.cell(0, 10, f"Cédula/DNI: {aspirante.dni}", ln=True)
         
-        # TRADUCCIÓN: Si el mapa no encuentra el ID, pone 'No asignado'
-        carrera_nombre = car_map.get(aspirante.carrera, "Carrera no encontrada")
-        periodo_nombre = per_map.get(aspirante.periodo, "Periodo no encontrado")
+        # IMPORTANTE: Ahora usamos ['llave'] porque es un diccionario
+        pdf.cell(0, 10, f"Nombre: {aspirante_dict.get('nombre', 'N/A')}", ln=True)
+        pdf.cell(0, 10, f"Correo: {aspirante_dict.get('correo', 'N/A')}", ln=True)
+        pdf.cell(0, 10, f"DNI: {aspirante_dict.get('dni', 'S/N')}", ln=True)
         
-        pdf.cell(0, 10, f"Carrera: {carrera_nombre}", ln=True)
-        pdf.cell(0, 10, f"Periodo: {periodo_nombre}", ln=True)
-        pdf.cell(0, 10, f"Estado del Trámite: {aspirante.estado}", ln=True)
+        # Buscamos en los mapas usando las llaves del diccionario
+        id_periodo = aspirante_dict.get('periodo')
+        id_carrera = aspirante_dict.get('carrera')
+        
+        pdf.cell(0, 10, f"Período: {per_map.get(id_periodo, 'No encontrado')}", ln=True)
+        pdf.cell(0, 10, f"Carrera: {car_map.get(id_carrera, 'No encontrada')}", ln=True)
+        pdf.cell(0, 10, f"Estado: {aspirante_dict.get('estado', 'Pendiente')}", ln=True)
 
-        # 4. Preparar buffer
+        # 4. Retornar el buffer
         buffer = io.BytesIO()
         pdf.output(buffer)
         buffer.seek(0)
