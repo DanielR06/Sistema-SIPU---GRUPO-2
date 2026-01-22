@@ -61,39 +61,147 @@ class SipuService:
     # application/services.py
 
     def generar_reporte_pdf(self, correo_usuario):
-        # 1. LEER DIRECTO: Obtenemos el diccionario (no el objeto)
-        aspirante_dict = self.repository.obtener_aspirante_crudo_por_correo(correo_usuario)
-        
-        if not aspirante_dict:
-            return None
+        aspirante = self.repository.obtener_aspirante_por_correo(correo_usuario)
+        if not aspirante: return None
 
-        # 2. TRADUCCIÓN: Seguimos necesitando los nombres reales
-        per_map = {p['id']: p['nombre'] for p in self.repository.obtener_periodos()}
-        car_map = {c['id']: c['nombre'] for c in self.repository.obtener_carreras()}
+        # Mapas de traducción: Usan el campo 'id' (no _id) para coincidir con lo guardado en estudiantes
+        per_map = {p.get('id'): p.get('nombre') for p in self.repository.obtener_periodos()}
+        car_map = {c.get('id'): c.get('nombre') for c in self.repository.obtener_carreras()}
 
-        # 3. CONSTRUCCIÓN DEL PDF
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", "B", 16)
-        pdf.cell(0, 10, "REPORTE DE INSCRIPCIÓN OFICIAL", ln=True, align='C')
+        pdf.cell(0, 10, "REPORTE DE INSCRIPCIÓN", ln=True, align='C')
         pdf.ln(10)
         
         pdf.set_font("Arial", "", 12)
+        pdf.cell(0, 10, f"Nombre: {aspirante.nombre}", ln=True)
+        pdf.cell(0, 10, f"DNI: {aspirante.dni}", ln=True)
         
-        # IMPORTANTE: Ahora usamos ['llave'] porque es un diccionario
-        pdf.cell(0, 10, f"Nombre: {aspirante_dict.get('nombre', 'N/A')}", ln=True)
-        pdf.cell(0, 10, f"Correo: {aspirante_dict.get('correo', 'N/A')}", ln=True)
-        pdf.cell(0, 10, f"DNI: {aspirante_dict.get('dni', 'S/N')}", ln=True)
+        # TRADUCCIÓN: Buscamos el nombre real usando el ID que tiene el objeto
+        periodo_real = per_map.get(aspirante.periodo, aspirante.periodo or "No asignado")
+        carrera_real = car_map.get(aspirante.carrera, aspirante.carrera or "No asignada")
         
-        # Buscamos en los mapas usando las llaves del diccionario
-        id_periodo = aspirante_dict.get('periodo')
-        id_carrera = aspirante_dict.get('carrera')
-        
-        pdf.cell(0, 10, f"Período: {per_map.get(id_periodo, 'No encontrado')}", ln=True)
-        pdf.cell(0, 10, f"Carrera: {car_map.get(id_carrera, 'No encontrada')}", ln=True)
-        pdf.cell(0, 10, f"Estado: {aspirante_dict.get('estado', 'Pendiente')}", ln=True)
+        pdf.cell(0, 10, f"Período: {periodo_real}", ln=True)
+        pdf.cell(0, 10, f"Carrera: {carrera_real}", ln=True)
 
-        # 4. Retornar el buffer
+        buffer = io.BytesIO()
+        pdf.output(buffer)
+        buffer.seek(0)
+        return buffer
+    
+    def generar_reporte_pdf_por_dni(self, dni: str):
+        """Genera PDF buscando por DNI en lugar de correo."""
+        aspirante = self.repository.obtener_aspirante_por_dni(dni)
+        if not aspirante: 
+            return None
+
+        # Mapas de traducción: Usan el campo 'id' para coincidir con lo guardado en estudiantes
+        periodos = self.repository.obtener_periodos()
+        carreras = self.repository.obtener_carreras()
+        sedes = self.repository.obtener_sedes()
+        
+        # Crear mapas usando 'id' (no _id)
+        per_map = {p.get('id'): p.get('nombre') for p in periodos}
+        car_map = {c.get('id'): c.get('nombre') for c in carreras}
+        sed_map = {s.get('id'): s.get('nombre') for s in sedes}
+
+        # TRADUCCIÓN: Buscamos los nombres reales usando los IDs
+        periodo_real = per_map.get(aspirante.periodo, aspirante.periodo or "No asignado")
+        carrera_real = car_map.get(aspirante.carrera, aspirante.carrera or "No asignada")
+        sede_real = sed_map.get(aspirante.sede, aspirante.sede or "No asignada")
+
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Encabezado
+        pdf.set_font("Arial", "B", 20)
+        pdf.cell(0, 15, "REPORTE DE INSCRIPCIÓN", ln=True, align='C')
+        pdf.set_font("Arial", "", 10)
+        pdf.cell(0, 8, "Sistema de Inscripción SIPU", ln=True, align='C')
+        pdf.ln(5)
+        
+        # Línea separadora
+        pdf.set_draw_color(100, 100, 100)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        # Tabla de Información del Aspirante
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "INFORMACIÓN DEL ASPIRANTE", ln=True)
+        pdf.ln(2)
+        
+        # Tabla 1: Datos del aspirante
+        pdf.set_font("Arial", "", 10)
+        pdf.set_fill_color(200, 200, 200)
+        
+        # Encabezados
+        pdf.cell(50, 8, "Campo", border=1, fill=True, align='C')
+        pdf.cell(0, 8, "Valor", border=1, fill=True, ln=True, align='L')
+        
+        # Datos
+        pdf.set_fill_color(240, 240, 240)
+        data_aspirante = [
+            ("Nombre", aspirante.nombre),
+            ("Correo", aspirante.correo),
+            ("DNI/Cédula", aspirante.dni),
+        ]
+        
+        fill = False
+        for label, valor in data_aspirante:
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(50, 8, label, border=1, fill=fill)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 8, str(valor), border=1, fill=fill, ln=True)
+            fill = not fill
+        
+        pdf.ln(5)
+        
+        # Línea separadora
+        pdf.set_draw_color(100, 100, 100)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        # Tabla 2: Información de Inscripción
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, "INFORMACIÓN DE INSCRIPCIÓN", ln=True)
+        pdf.ln(2)
+        
+        pdf.set_font("Arial", "", 10)
+        pdf.set_fill_color(200, 200, 200)
+        
+        # Encabezados
+        pdf.cell(50, 8, "Campo", border=1, fill=True, align='C')
+        pdf.cell(0, 8, "Valor", border=1, fill=True, ln=True, align='L')
+        
+        # Datos
+        pdf.set_fill_color(240, 240, 240)
+        data_inscripcion = [
+            ("Período", periodo_real),
+            ("Carrera", carrera_real),
+            ("Jornada", aspirante.jornada or "No asignada"),
+            ("Sede", sede_real),
+        ]
+        
+        fill = False
+        for label, valor in data_inscripcion:
+            pdf.set_font("Arial", "B", 10)
+            pdf.cell(50, 8, label, border=1, fill=fill)
+            pdf.set_font("Arial", "", 10)
+            pdf.cell(0, 8, str(valor), border=1, fill=fill, ln=True)
+            fill = not fill
+        
+        pdf.ln(10)
+        
+        # Línea separadora
+        pdf.set_draw_color(100, 100, 100)
+        pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+        pdf.ln(5)
+        
+        # Pie de página
+        pdf.set_font("Arial", "", 9)
+        pdf.cell(0, 8, f"Documento generado automáticamente | Fecha: {__import__('datetime').datetime.now().strftime('%d/%m/%Y %H:%M')}", ln=True, align='C')
+
         buffer = io.BytesIO()
         pdf.output(buffer)
         buffer.seek(0)
@@ -117,26 +225,36 @@ class SipuService:
 
     def procesar_inscripcion(self, form_data: dict):
         try:
-            # 1. Preparar el nombre completo
-            nom = form_data.get('nombres', '').strip()
-            ape = form_data.get('apellidos', '').strip()
-            nombre_completo = f"{nom} {ape}".strip()
+            # Obtener datos del formulario
+            correo = form_data.get('correo', '').strip()
+            dni = form_data.get('dni', '').strip()
+            periodo = form_data.get('periodo', '').strip()
+            carrera = form_data.get('carrera', '').strip()
+            jornada = form_data.get('jornada', '').strip()
+            sede = form_data.get('sede', '').strip()
             
-            # 2. Instanciar el objeto de dominio con los 5 campos clave
-            nuevo_aspirante = Aspirante(
-                nombre=nombre_completo,
-                correo=form_data.get('correo'),
-                dni=form_data.get('dni'),
-                periodo=form_data.get('periodo'),
-                carrera=form_data.get('carrera')
-            )
+            if not correo or not dni or not periodo or not carrera or not jornada or not sede:
+                return False, "Todos los campos son obligatorios"
+            
+            # Buscar el aspirante existente
+            aspirante = self.repository.obtener_aspirante_por_correo(correo)
+            if not aspirante:
+                return False, "Aspirante no encontrado"
+            
+            # Actualizar con los datos de inscripción
+            aspirante.dni = dni
+            aspirante.periodo = periodo
+            aspirante.carrera = carrera
+            aspirante.jornada = jornada
+            aspirante.sede = sede
+            aspirante.estado = 'Inscrito'
 
-            # 3. Pasar el objeto al repositorio
-            self.repository.guardar_aspirante(nuevo_aspirante)
+            # Guardar cambios
+            self.repository.guardar_aspirante(aspirante)
             
             return True, "Inscripción procesada correctamente"
             
         except Exception as e:
-            print(f"Error: {e}") # Aquí es donde salía el error del setter
+            print(f"Error: {e}")
             return False, str(e)
     

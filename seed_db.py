@@ -36,7 +36,18 @@ def seed_catalogos(db):
     ]
     db.careers.delete_many({})
     db.careers.insert_many(carreras)
-    print(">>> Catálogos de Período y Carrera configurados.")
+    
+    # Configuración de Sedes
+    sedes = [
+        {"id": "principal", "nombre": "Sede Principal"},
+        {"id": "norte", "nombre": "Sede Norte"},
+        {"id": "sur", "nombre": "Sede Sur"},
+        {"id": "este", "nombre": "Sede Este"}
+    ]
+    db.sedes.delete_many({})
+    db.sedes.insert_many(sedes)
+    
+    print(">>> Catálogos de Período, Carrera y Sede configurados.")
 
 def main():
     print(">>> Iniciando proceso de seed...")

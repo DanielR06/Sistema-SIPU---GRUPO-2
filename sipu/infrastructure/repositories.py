@@ -20,36 +20,33 @@ class MongoSipuRepository(ISipuRepository):
 
     # --- Implementación de la Interfaz ---
     def obtener_periodos(self):
-        """Consulta la colección 'periods' usando el Singleton."""
-        return list(self.db.periods.find({"activo": True}))
+        """Retorna todos los periodos disponibles."""
+        return list(self.db.periods.find())
 
     def obtener_carreras(self):
-        """Consulta la colección 'careers'."""
+        """Retorna todas las carreras disponibles."""
         return list(self.db.careers.find())
+    
+    def obtener_sedes(self):
+        """Retorna todas las sedes disponibles."""
+        return list(self.db.sedes.find())
+    
     def listar_estudiantes_crudos(self) -> list:
         """Retorna la lista de diccionarios directamente de Mongo para validaciones."""
         return list(self.students.find())
-
-    def obtener_periodos(self):
-        """Retorna los periodos para el formulario."""
-        return list(self.db.periods.find())
-
-    def obtener_carreras_activas(self):
-        """Retorna las carreras para el formulario."""
-        return list(self.db.careers.find({'active': True}))
     def obtener_aspirante_por_correo(self, correo: str) -> Optional[Aspirante]:
         doc = self.students.find_one({'correo': correo})
         if doc:
-            # Rehidratamos el objeto
-            aspirante = Aspirante(
-                nombre=doc.get('nombre'), 
+            # IMPORTANTE: Rehidratamos el objeto con TODOS los campos de la DB
+            return Aspirante(
+                nombre=doc.get('nombre'),
                 correo=doc.get('correo'),
                 dni=doc.get('dni'),
                 periodo=doc.get('periodo'),
-                carrera=doc.get('carrera')
+                carrera=doc.get('carrera'),
+                jornada=doc.get('jornada'),
+                sede=doc.get('sede')
             )
-            aspirante.estado = doc.get('estado', 'Pendiente')
-            return aspirante
         return None
 
     # 2. El que usaremos para el "Camino Directo" del PDF
@@ -65,6 +62,8 @@ class MongoSipuRepository(ISipuRepository):
             'dni': aspirante.dni,
             'periodo': aspirante.periodo,
             'carrera': aspirante.carrera,
+            'jornada': aspirante.jornada,
+            'sede': aspirante.sede,
             'rol': 'aspirante',
             'estado': aspirante.estado
         }
@@ -98,13 +97,14 @@ class MongoSipuRepository(ISipuRepository):
         
         if doc:
             # 2. REHIDRATACIÓN: Creamos el objeto con TODOS los campos
-            # Si no los pasas aquí, el Service recibirá un objeto "vacío"
             aspirante = Aspirante(
                 nombre=doc.get('nombre'),
                 correo=doc.get('correo'),
                 dni=doc.get('dni'),
-                periodo=doc.get('periodo'), # VITAL: Traer el ID del periodo
-                carrera=doc.get('carrera')   # VITAL: Traer el ID de la carrera
+                periodo=doc.get('periodo'),
+                carrera=doc.get('carrera'),
+                jornada=doc.get('jornada'),
+                sede=doc.get('sede')
             )
             aspirante.estado = doc.get('estado', 'Pendiente')
             return aspirante

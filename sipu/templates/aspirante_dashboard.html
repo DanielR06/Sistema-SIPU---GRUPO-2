@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mi Inscripción - SIPU</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+      .header-aspirante {
+        background-color: #27ae60;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="header-aspirante">
+        <h1>Mi Inscripción SIPU</h1>
+        <p>Bienvenido, {{ user }}</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="actions">
+        {% if inscripcion_completada %}
+          <a href="{{ url_for('auth.logout') }}" class="button secondary">Cerrar Sesión</a>
+        {% else %}
+          <a href="{{ url_for('main.inscripcion') }}" class="button">Completar Inscripción</a>
+          <a href="{{ url_for('auth.logout') }}" class="button secondary">Cerrar Sesión</a>
+        {% endif %}
+      </div>
+
+      <h2>Estado de tu Inscripción</h2>
+      {% if inscripcion_completada %}
+        <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px; color: #155724;">
+          <h3>✅ Inscripción Completada</h3>
+          <p>Tu inscripción ha sido finalizada correctamente.</p>
+          <p><strong>Periodo:</strong> {{ aspirante.get('periodo', 'N/A') }}</p>
+          <p><strong>Carrera:</strong> {{ aspirante.get('carrera', 'N/A') }}</p>
+          <p><strong>Jornada:</strong> {{ aspirante.get('jornada', 'N/A') }}</p>
+          <p><strong>Sede:</strong> {{ aspirante.get('sede', 'N/A') }}</p>
+          <p style="margin-top: 15px;">
+            <a href="{{ url_for('main.descargar_pdf', dni=aspirante.get('dni')) }}" class="button" style="display: inline-block; margin-top: 10px;">📄 Descargar Reporte PDF</a>
+          </p>
+        </div>
+      {% else %}
+        <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; color: #856404;">
+          <h3>⏳ Inscripción Pendiente</h3>
+          <p>Aún no has completado tu inscripción. Por favor, completa tu información de período, carrera, jornada y sede.</p>
+          <p>Haz clic en el botón <strong>"Completar Inscripción"</strong> para proceder.</p>
+        </div>
+      {% endif %}
+    </main>
+  </body>
+</html>

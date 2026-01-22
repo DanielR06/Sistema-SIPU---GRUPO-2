@@ -15,8 +15,8 @@ def descargar_pdf(dni):
     from flask import send_file
     import io
 
-    # Pedimos al servicio que genere el archivo (Capa de Aplicación)
-    pdf_buffer = sipu_service.generar_reporte_pdf(dni)
+    # Pedimos al servicio que genere el archivo por DNI
+    pdf_buffer = sipu_service.generar_reporte_pdf_por_dni(dni)
     
     if not pdf_buffer:
         flash("No se pudo generar el PDF", "danger")
@@ -29,30 +29,22 @@ def descargar_pdf(dni):
         mimetype='application/pdf'
     )
 
-@bp.route('/', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        correo = request.form.get('correo', '').strip()
-        contrasena = request.form.get('contrasena', '').strip()
-        
-        # El servicio maneja la autenticación y la cadena de responsabilidad interna
-        usuario = sipu_service.autenticar_usuario(correo, contrasena)
-        
-        if usuario:
-            session['user'] = usuario.nombre
-            session['rol'] = usuario.get_rol()
-            flash(f'Bienvenido/a, {usuario.nombre}', 'success')
-            return redirect(url_for('main.dashboard'))
-        
-        flash('Credenciales incorrectas o datos inválidos', 'danger')
-        return redirect(url_for('main.login'))
-    
-    return render_template('login.html')
-
 @bp.route('/aspirante/inscripcion', methods=['GET', 'POST'])
 def inscripcion():
     if 'user' not in session:
-        return redirect(url_for('main.login'))
+        return redirect(url_for('auth.login'))
+
+    # Obtener información del usuario en sesión
+    correo_usuario = session.get('user_email')
+    if not correo_usuario:
+        flash('Sesión inválida', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    # Verificar si ya completó inscripción
+    aspirante_actual = repo.students.find_one({'correo': correo_usuario})
+    if aspirante_actual and aspirante_actual.get('estado') == 'Inscrito':
+        flash('Ya has completado tu inscripción', 'info')
+        return redirect(url_for('main.aspirante_dashboard'))
 
     if request.method == 'POST':
         # El servicio procesa los datos del formulario y devuelve el resultado
@@ -60,16 +52,23 @@ def inscripcion():
         
         if exito:
             flash(mensaje, 'success')
-            return redirect(url_for('main.lista_aspirantes'))
-        
-        flash(mensaje, 'danger')
-        return redirect(url_for('main.inscripcion'))
+            # Después de guardar exitosamente, redirigimos
+            return redirect(url_for('main.aspirante_dashboard'), code=303)
+        else:
+            flash(mensaje, 'danger')
+            # Si hay error, mostramos el formulario nuevamente
+            periods = list(repo.db.periods.find()) 
+            careers = list(repo.db.careers.find())
+            sedes = list(repo.db.sedes.find())
+            return render_template('inscripcion.html', periods=periods, careers=careers, sedes=sedes)
 
-    # CORRECTO: Pedimos los catálogos al servicio
-    periods = list(repo.db.periods.find({"activo": True})) 
-    careers = list(repo.db.careers.find()) # Las carreras suelen estar todas visibles
+    # GET: Mostrar el formulario
+    # Obtener catálogos para el formulario
+    periods = list(repo.db.periods.find()) 
+    careers = list(repo.db.careers.find())
+    sedes = list(repo.db.sedes.find())
     
-    return render_template('inscripcion.html', periods=periods, careers=careers)
+    return render_template('inscripcion.html', periods=periods, careers=careers, sedes=sedes)
 
 @bp.route('/aspirante/list')
 def lista_aspirantes():
@@ -91,9 +90,81 @@ def dashboard():
     
     # Verificación de seguridad básica (Encapsulamiento de sesión)
     if 'user' not in session:
-        return redirect(url_for('main.login'))
+        return redirect(url_for('auth.login'))
+    
+    # Redirigir según rol
+    rol = session.get('rol')
+    if rol == 'admin':
+        return redirect(url_for('main.admin_dashboard'))
+    else:
+        return redirect(url_for('main.aspirante_dashboard'))
+
+@bp.route('/admin/dashboard')
+def admin_dashboard():
+    """Dashboard del administrador."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    students = sipu_service.obtener_lista_aspirantes()
+    return render_template('admin_dashboard.html', user=session.get('user'), students=students)
+
+@bp.route('/admin/crear-aspirante', methods=['GET', 'POST'])
+def crear_aspirante():
+    """Admin crea un nuevo aspirante con email y contraseña."""
+    if 'user' not in session or session.get('rol') != 'admin':
+        return redirect(url_for('auth.login'))
+    
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        correo = request.form.get('correo', '').strip()
+        contrasena = request.form.get('contrasena', '').strip()
         
-    return render_template('dashboard.html', user=session.get('user'))
+        if not nombre or not correo or not contrasena:
+            flash('Todos los campos son obligatorios', 'danger')
+            return redirect(url_for('main.crear_aspirante'))
+        
+        # Verificar que no exista
+        if repo.students.find_one({'correo': correo}):
+            flash('El correo ya está registrado', 'danger')
+            return redirect(url_for('main.crear_aspirante'))
+        
+        # Crear aspirante vacío (sin período, carrera, jornada, sede)
+        nuevo_aspirante = {
+            'nombre': nombre,
+            'correo': correo,
+            'contrasena': contrasena,
+            'rol': 'aspirante',
+            'estado': 'Incompleto',  # Estado diferente
+            'dni': None,
+            'periodo': None,
+            'carrera': None,
+            'jornada': None,
+            'sede': None
+        }
+        
+        repo.students.insert_one(nuevo_aspirante)
+        flash(f'Aspirante {nombre} creado correctamente. Correo: {correo}', 'success')
+        return redirect(url_for('main.admin_dashboard'))
+    
+    return render_template('crear_aspirante.html')
+
+@bp.route('/aspirante/dashboard')
+def aspirante_dashboard():
+    """Dashboard del aspirante."""
+    if 'user' not in session or session.get('rol') != 'postulante':
+        return redirect(url_for('auth.login'))
+    
+    # Obtener información del aspirante
+    correo_usuario = session.get('user_email')
+    aspirante = repo.students.find_one({'correo': correo_usuario}) if correo_usuario else None
+    
+    # Determinar estado de inscripción
+    inscripcion_completada = aspirante and aspirante.get('estado') == 'Inscrito'
+    
+    return render_template('aspirante_dashboard.html', 
+                         user=session.get('user'),
+                         inscripcion_completada=inscripcion_completada,
+                         aspirante=aspirante)
 
 @bp.route('/aspirante/documentos/<correo>')
 def descargar_documentos(correo):
@@ -107,6 +178,19 @@ def descargar_documentos(correo):
     if not aspirante_doc:
         flash('Aspirante no encontrado', 'danger')
         return redirect(url_for('main.lista_aspirantes'))
+    
+    # Crear mapas de períodos, carreras y sedes
+    periodos = list(repo.db.periods.find())
+    carreras = list(repo.db.careers.find())
+    sedes = list(repo.db.sedes.find())
+    per_map = {p.get('id'): p.get('nombre') for p in periodos}
+    car_map = {c.get('id'): c.get('nombre') for c in carreras}
+    sed_map = {s.get('id'): s.get('nombre') for s in sedes}
+    
+    # Obtener nombres mapeados
+    periodo_nombre = per_map.get(aspirante_doc.get('periodo'), 'No asignado')
+    carrera_nombre = car_map.get(aspirante_doc.get('carrera'), 'No asignada')
+    sede_nombre = sed_map.get(aspirante_doc.get('sede'), 'No asignada')
     
     # Crear PDF en memoria
     import io
@@ -140,8 +224,10 @@ def descargar_documentos(correo):
         ['Nombre:', aspirante_doc.get('nombre', 'N/A')],
         ['Correo:', aspirante_doc.get('correo', 'N/A')],
         ['DNI:', aspirante_doc.get('dni', 'N/A')],
-        ['Período:', aspirante_doc.get('period_name', 'N/A')],
-        ['Carrera:', aspirante_doc.get('career_name', 'N/A')],
+        ['Período:', periodo_nombre],
+        ['Carrera:', carrera_nombre],
+        ['Jornada:', aspirante_doc.get('jornada', 'N/A')],
+        ['Sede:', sede_nombre],
         ['Estado:', aspirante_doc.get('estado', 'Pendiente')]
     ]
     

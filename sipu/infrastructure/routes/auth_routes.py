@@ -24,9 +24,15 @@ def login():
         if usuario:
             # Guardamos datos mínimos en la sesión (Encapsulamiento)
             session['user'] = usuario.nombre
+            session['user_email'] = correo
             session['rol'] = usuario.get_rol()
             flash(f'Bienvenido/a, {usuario.nombre}', 'success')
-            return redirect(url_for('main.dashboard'))
+            
+            # Redirigir según el rol
+            if usuario.get_rol() == 'admin':
+                return redirect(url_for('main.admin_dashboard'))
+            else:
+                return redirect(url_for('main.aspirante_dashboard'))
         
         flash('Credenciales incorrectas o datos no válidos', 'danger')
         return redirect(url_for('auth.login'))
