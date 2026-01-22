@@ -37,37 +37,39 @@ class MongoSipuRepository(ISipuRepository):
     def obtener_carreras_activas(self):
         """Retorna las carreras para el formulario."""
         return list(self.db.careers.find({'active': True}))
+    def obtener_aspirante_por_correo(self, correo: str) -> Optional[Aspirante]:
+        doc = self.students.find_one({'correo': correo})
+        if doc:
+            # Rehidratamos el objeto con TODOS los campos de la DB
+            aspirante = Aspirante(
+                nombre=doc['nombre'], 
+                correo=doc['correo'],
+                dni=doc.get('dni'),
+                periodo=doc.get('periodo'),
+                carrera=doc.get('carrera')
+            )
+            aspirante.estado = doc.get('estado', 'Pendiente')
+            return aspirante
+        return None
+
+    # Tu método guardar_aspirante ya estaba bien, 
+    # pero asegúrate de que use las variables del objeto:
     def guardar_aspirante(self, aspirante: Aspirante) -> bool:
-        
-        """
-        Convierte un objeto Aspirante (Dominio) a formato Mongo (Infraestructura).
-        """
         student_doc = {
-            'nombre': aspirante.nombre,
-            'correo': aspirante.correo,
+            'nombre': aspirante.nombre,  # Lee de la property
+            'correo': aspirante.correo,  # Lee de la property
+            'dni': aspirante.dni,
+            'periodo': aspirante.periodo,
+            'carrera': aspirante.carrera,
+            'rol': 'aspirante',
             'estado': aspirante.estado
         }
-        
-        # Usamos update_one con upsert para guardar o actualizar
         result = self.students.update_one(
             {'correo': aspirante.correo},
             {'$set': student_doc},
             upsert=True
         )
         return result.acknowledged
-
-    def obtener_aspirante_por_correo(self, correo: str) -> Optional[Aspirante]:
-        """
-        Busca en Mongo y devuelve un Objeto Aspirante (Unidad 1: Objetos).
-        """
-        doc = self.students.find_one({'correo': correo})
-        if doc:
-            # Rehidratamos el objeto de dominio desde los datos de la DB
-            aspirante = Aspirante(nombre=doc['nombre'], correo=doc['correo'])
-            aspirante.estado = doc.get('estado', 'Pendiente')
-            return aspirante
-        return None
-
     def listar_documentos(self, propietario_id: str) -> List[Documento]:
         """
         Devuelve una lista de objetos Documento (Unidad 1: Relaciones).
@@ -86,6 +88,23 @@ class MongoSipuRepository(ISipuRepository):
             documentos_obj.append(obj)
             
         return documentos_obj
+    def obtener_aspirante_por_dni(self, dni: str) -> Optional[Aspirante]:
+        # 1. Buscamos el documento en MongoDB
+        doc = self.students.find_one({'dni': dni})
+        
+        if doc:
+            # 2. REHIDRATACIÓN: Creamos el objeto con TODOS los campos
+            # Si no los pasas aquí, el Service recibirá un objeto "vacío"
+            aspirante = Aspirante(
+                nombre=doc.get('nombre'),
+                correo=doc.get('correo'),
+                dni=doc.get('dni'),
+                periodo=doc.get('periodo'), # VITAL: Traer el ID del periodo
+                carrera=doc.get('carrera')   # VITAL: Traer el ID de la carrera
+            )
+            aspirante.estado = doc.get('estado', 'Pendiente')
+            return aspirante
+        return None
 
     def close(self):
         self.client.close()

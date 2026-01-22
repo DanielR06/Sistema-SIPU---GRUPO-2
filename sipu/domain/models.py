@@ -34,9 +34,15 @@ class Administrador(Usuario):
         return Universidad(nombre, sedes)
 
 class Aspirante(Usuario):
-    def __init__(self, nombre: str, correo: str):
+    def __init__(self, nombre, correo, dni=None, periodo=None, carrera=None):
+        # CORRECTO: Llamamos al constructor del padre para asignar nombre y correo
         super().__init__(nombre, correo)
-        self._estado = "Pendiente"
+        # El resto de atributos se asignan normalmente
+        self.dni = dni
+        self.periodo = periodo
+        self.carrera = carrera
+        self.rol = 'aspirante'
+        self._estado = 'Pendiente' # Usamos el guion bajo para el setter de abajo
 
     def get_rol(self) -> str:
         return "postulante"

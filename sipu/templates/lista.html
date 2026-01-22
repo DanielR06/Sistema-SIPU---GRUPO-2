@@ -13,20 +13,26 @@
       <div class="table-wrapper">
         <table class="table">
           <thead>
-          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>DNI</th><th>Periodo</th><th>Carrera</th><th>Acciones</th></tr>
-        </thead>
+            <tr>
+                <th>Nombre Completo</th>
+                <th>Correo</th>
+                <th>DNI / Cédula</th>
+                <th>Período</th>
+                <th>Carrera</th>
+                <th>Acciones</th>
+            </tr>
+          </thead>
         <tbody>
           {% for student in students %}
-          <tr>
-            <td>{{ student.get('dni', 'Sin DNI') }}</td>
-            <td>{{ student.get('nombre') }}</td>
-            <td>{{ student.get('correo') }}</td>
-            <td>{{ student.get('period_name', 'No asignado') }}</td>
-            <td>{{ student.get('career_name', 'No asignada') }}</td>
-            <td>
-                <a href="{{ url_for('main.descargar_documentos', correo=student.get('correo')) }}" class="btn-edit">Ver Detalle</a>
-            </td>
-          </tr>
+            <tr>
+                <td>{{ student.nombre }}</td>
+                <td>{{ student.correo }}</td>
+                <td>{{ student.dni_display }}</td> <td>{{ student.periodo_nombre }}</td> 
+                <td>{{ student.carrera_nombre }}</td> 
+                <td>
+                    <a href="{{ url_for('main.descargar_documentos', correo=student.correo) }}">PDF</a>
+                </td>
+            </tr>
           {% endfor %}
         </tbody>
         </table>

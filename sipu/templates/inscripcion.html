@@ -21,27 +21,34 @@
 
       <form method="post">
         <label>Período *</label>
-        <select name="periodo" required>
-            <option value="">-- Seleccione Período --</option>
-            {% for p in periods %}
-                <option value="{{ p.id }}">{{ p.nombre }}</option>
-            {% endfor %}
-        </select>
-        <label>Carrera *</label>
-        <select name="carrera" required>
-            <option value="">-- Seleccione Carrera --</option>
-            {% for c in careers %}
-                <option value="{{ c.id }}">{{ c.nombre }}</option>
-            {% endfor %}
-        </select>
+        <div class="form-group">
+            <label>Período Académico</label>
+            <select name="periodo" required>
+                <option value="">-- Seleccione --</option>
+                {% for p in periods %}
+                    <option value="{{ p.id }}">{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Carrera</label>
+            <select name="carrera" required>
+                <option value="">-- Seleccione --</option>
+                {% for c in careers %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <label>Apellidos</label>
         <input name="apellidos">
         <label>Nombres</label>
         <input name="nombres">
         <label>Correo *</label>
         <input name="correo" type="email" required>
-        <label>DNI</label>
-        <input name="dni">
+        <div class="form-group">
+            <label>DNI / Cédula</label>
+            <input type="text" name="dni" placeholder="Ej: 1312345678" required>
+        </div>
 
         <div class="row">
           <button type="submit">Guardar</button>

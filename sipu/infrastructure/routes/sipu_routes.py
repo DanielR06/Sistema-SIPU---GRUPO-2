@@ -9,6 +9,26 @@ sipu_service = SipuService(repo)
 
 bp = Blueprint('main', __name__)
 
+@bp.route('/aspirante/pdf/<dni>')
+def descargar_pdf(dni):
+    """Acción de infraestructura para servir el archivo PDF."""
+    from flask import send_file
+    import io
+
+    # Pedimos al servicio que genere el archivo (Capa de Aplicación)
+    pdf_buffer = sipu_service.generar_reporte_pdf(dni)
+    
+    if not pdf_buffer:
+        flash("No se pudo generar el PDF", "danger")
+        return redirect(url_for('main.lista_aspirantes'))
+
+    return send_file(
+        pdf_buffer,
+        as_attachment=True,
+        download_name=f"reporte_{dni}.pdf",
+        mimetype='application/pdf'
+    )
+
 @bp.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
